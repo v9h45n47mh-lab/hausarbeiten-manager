@@ -96,3 +96,7 @@ Python- und JavaScript-Syntax wurden geprüft. Ein Lauf in einer echten HA-Insta
 - Einstellungen sehen und ändern ausschließlich die in der Integration zugeordneten Konten von Vera und Manuel. Andere Administratoren erhalten dadurch keinen Zugriff auf den Urlaubsmodus.
 - Die Sieben-Tage-Ansicht blendet Tage ohne offene Einträge aus. Wird der letzte Termin eines Tages erledigt, verschwindet auch dessen Tagesüberschrift.
 - Das vorgemerkte Logo wird mit dieser Version noch nicht erstellt.
+
+## Neu in 0.1.2
+
+Vera und Manuel legen Hausarbeiten unter Einstellungen (Zahnrad) an und verwalten sie dort. Kinder haben auf der Hauptseite **+ Einmalige Arbeit**, ausschließlich für sich selbst. Kinder können keine Wiederholungen anlegen. Tagesüberschriften sind auf- und zuklappbar. Gleichnamige Aufgaben eines Tages werden in der Elternansicht zusammengefasst; jedes Kind behält ein eigenes Häkchen. Bei mehreren gleichnamigen Aufgaben desselben Kindes am selben Tag erledigt dessen Häkchen alle dazugehörigen Termine. Die Erledigung für das andere Kind bleibt offen.

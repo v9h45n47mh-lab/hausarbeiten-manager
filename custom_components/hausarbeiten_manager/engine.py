@@ -56,6 +56,8 @@ def validate_task(raw, actor, old=None):
     if end and end < start:
         raise ValueError('Das Enddatum liegt vor dem Startdatum.')
     kind = raw.get('kind', 'once')
+    if not actor['parent'] and kind != 'once':
+        raise PermissionError('Kinder können nur einmalige Arbeiten anlegen.')
     if kind not in KINDS:
         raise ValueError('Unbekannte Wiederholung.')
     interval = int(raw.get('interval', 1))

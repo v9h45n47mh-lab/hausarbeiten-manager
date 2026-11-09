@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.1.2
+
+- Elternverwaltung und Anlage von Hausarbeiten unter Einstellungen.
+- Kinder erhalten auf der Hauptseite einen Button für eigene einmalige Arbeiten; Wiederholungen werden im Backend abgewiesen.
+- Tage sind auf- und zuklappbar.
+- Gleichnamige Aufgaben am selben Tag werden in der Elternansicht zusammengefasst, mit separaten Erledigungen je Kind.
+
 ## 0.1.1
 
 - Urlaubsmodus in den Einstellungsbereich verschoben.

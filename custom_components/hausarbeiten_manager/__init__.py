@@ -20,7 +20,7 @@ from .engine import (CHILDREN, actor_for, can_edit, can_manage_settings, complet
                      occurrences, save_task, save_vacation, visible_people, vacation_on)
 
 DOMAIN = 'hausarbeiten_manager'
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 SIGNAL = DOMAIN + '_updated'
 _LOGGER = logging.getLogger(__name__)
 

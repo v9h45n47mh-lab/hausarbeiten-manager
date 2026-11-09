@@ -58,6 +58,11 @@ class EngineTests(unittest.TestCase):
         self.assertTrue(e.occurs(task,date(2026,11,10)))
         self.assertFalse(e.occurs(task,date(2026,11,11)))
 
+    def test_children_cannot_create_repeating_tasks(self):
+        for kind in ['daily','weekly','monthly_nth']:
+            with self.assertRaises(PermissionError):
+                e.validate_task(raw(assignees=['Paul'],kind=kind),PAUL)
+
     def test_child_can_create_only_for_self(self):
         e.validate_task(raw(assignees=['Paul']),PAUL)
         for names in [['Maximilian'],['Maximilian','Paul']]:
