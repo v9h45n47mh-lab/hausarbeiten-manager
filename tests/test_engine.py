@@ -139,6 +139,18 @@ class EngineTests(unittest.TestCase):
         self.assertTrue(e.vacation_on(data,date(2026,11,11)))
         self.assertFalse(e.vacation_on(data,date(2026,11,12)))
 
+    def test_only_mapped_parents_can_manage_settings(self):
+        for user_id in ['v', 'm']:
+            actor=e.actor_for(user_id,MAPPING)
+            self.assertTrue(e.can_manage_settings(actor))
+            e.save_vacation(e.empty_data(),True,'2026-11-09','2026-11-12',actor,TODAY)
+        for actor in [MAX,PAUL,e.actor_for('other_admin',MAPPING,True)]:
+            self.assertFalse(e.can_manage_settings(actor))
+            with self.assertRaises(PermissionError):
+                e.save_vacation(e.empty_data(),True,'2026-11-09','2026-11-12',actor,TODAY)
+            with self.assertRaises(PermissionError):
+                e.save_vacation(e.empty_data(),False,None,None,actor,TODAY)
+
     def test_child_cannot_change_vacation(self):
         with self.assertRaises(PermissionError):e.save_vacation(e.empty_data(),True,'2026-11-09','2026-11-12',PAUL,TODAY)
 

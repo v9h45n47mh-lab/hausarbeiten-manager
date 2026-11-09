@@ -24,6 +24,10 @@ def actor_for(user_id, mapping, is_admin=False):
     return {'user_id': user_id, 'person': person or 'Administrator', 'parent': is_admin or person in ADULTS}
 
 
+def can_manage_settings(actor):
+    return actor['person'] in ADULTS
+
+
 def visible_people(actor):
     return list(CHILDREN) if actor['parent'] else [actor['person']]
 
@@ -159,8 +163,8 @@ def complete(data, task_id, person, day_text, actor, today):
 
 
 def save_vacation(data, enabled, start, end, actor, today):
-    if not actor['parent']:
-        raise PermissionError('Nur Eltern dürfen den Urlaubsmodus ändern.')
+    if not can_manage_settings(actor):
+        raise PermissionError('Nur Vera und Manuel dürfen die Einstellungen ändern.')
     result = deepcopy(data)
     if enabled:
         first, last = iso_date(start), iso_date(end)

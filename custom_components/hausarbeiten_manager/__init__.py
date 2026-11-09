@@ -16,11 +16,11 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
-from .engine import (CHILDREN, actor_for, can_edit, complete, delete_task, empty_data,
+from .engine import (CHILDREN, actor_for, can_edit, can_manage_settings, complete, delete_task, empty_data,
                      occurrences, save_task, save_vacation, visible_people, vacation_on)
 
 DOMAIN = 'hausarbeiten_manager'
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 SIGNAL = DOMAIN + '_updated'
 _LOGGER = logging.getLogger(__name__)
 
@@ -90,10 +90,11 @@ class Manager:
             tasks.append(row)
         today = self.today()
         return {'revision': self.data['revision'], 'today': today.isoformat(),
-                'person': actor['person'], 'parent': actor['parent'], 'people': people,
+                'person': actor['person'], 'parent': actor['parent'],
+                'settings_allowed': can_manage_settings(actor), 'people': people,
                 'tasks': tasks, 'occurrences': occurrences(self.data, people, today, today+timedelta(days=6)),
                 'vacation_active': vacation_on(self.data, today),
-                'vacations': deepcopy(self.data['vacations']), 'version': VERSION}
+                'vacations': deepcopy(self.data['vacations']) if can_manage_settings(actor) else [], 'version': VERSION}
 
     async def mutate(self, actor, revision, operation, payload):
         async with self.lock:

@@ -2,11 +2,11 @@
 
 Lokaler Hausarbeitenkalender für Home Assistant. Eltern planen Aufgaben für Maximilian und Paul; die Kinder sehen ihre eigenen Aufgaben und können eigene Hausarbeiten anlegen. Wiederholungen, Urlaubszeiträume und Erledigungen werden lokal gespeichert.
 
-## Version 0.1.0
+## Version 0.1.1
 
 - **Vera/Manuel:** einmalige und wiederkehrende Aufgaben für Maximilian, Paul oder beide Kinder anlegen, bearbeiten und löschen. Erledigungen für beide Kinder möglich.
 - **Maximilian/Paul:** eigene Termine der nächsten sieben Tage sehen und abhaken. Selbst angelegte Aufgaben für sich selbst bearbeiten und löschen. Von Eltern zugewiesene Aufgaben dürfen erledigt, aber nicht umgeplant werden.
-- **Kalenderkarte:** heute und die folgenden sechs Tage, gruppiert nach Datum. Erledigte Termine verschwinden. Jede Zuordnung an ein Kind hat eine eigene Erledigung: Bei einer Aufgabe für beide muss jedes Kind seinen Termin abhaken.
+- **Kalenderkarte:** heute und die folgenden sechs Tage, gruppiert nach Datum. Es erscheinen nur Tage mit offenen Einträgen; leere Tage werden ausgeblendet. Erledigte Termine verschwinden. Jede Zuordnung an ein Kind hat eine eigene Erledigung: Bei einer Aufgabe für beide muss jedes Kind seinen Termin abhaken.
 - **Wiederholungen:** einmalig; täglich/alle X Tage; wöchentlich/alle X Wochen an gewählten Wochentagen; erster bis fünfter oder letzter Wochentag im Monat, auch alle X Monate.
 - **Urlaub:** Eltern pausieren alle Hausarbeiten beider Kinder für einen Datumsbereich. Termine im Zeitraum entfallen, auch einmalige Aufgaben. Kein Nachholstapel und keine Verschiebung des Wiederholungsrhythmus. Nach dem Ende des Zeitraums laufen die regulären Termine weiter.
 - **Native HA-Kalender:** je ein Kalender für Maximilian und Paul, zusätzlich zur interaktiven Karte.
@@ -38,7 +38,7 @@ Für die Rollen von Maximilian und Paul (sowie eingeschränkte Elternrollen) unt
 hausarbeiten_manager/*
 ```
 
-Damit werden ausschließlich die Befehle dieser Integration zugelassen. Die Integration prüft bei JEDEM Abruf und Schreibaufruf die tatsächliche angemeldete Benutzer-ID: Kinder bekommen nur ihre eigenen Termine und dürfen weder für das andere Kind schreiben noch Urlaube ändern. Native HA-Administratoren dürfen die Elternfunktionen verwenden. Auch Vera und Manuel erhalten die Elternfunktionen über die explizite Kontozuordnung, ohne HA-Administratoren sein zu müssen.
+Damit werden ausschließlich die Befehle dieser Integration zugelassen. Die Integration prüft bei JEDEM Abruf und Schreibaufruf die tatsächliche angemeldete Benutzer-ID: Kinder bekommen nur ihre eigenen Termine und dürfen weder für das andere Kind schreiben noch Urlaube ändern. Native HA-Administratoren dürfen die Aufgabenverwaltung verwenden; die Einstellungen und der Urlaubsmodus sind ausschließlich den zugeordneten Konten Vera und Manuel vorbehalten. Auch Vera und Manuel erhalten die Elternfunktionen über die explizite Kontozuordnung, ohne HA-Administratoren sein zu müssen.
 
 Für die zusätzlichen nativen Kalender die tatsächlichen Entitäts-IDs unter Entwicklerwerkzeuge → Zustände prüfen. Erwartet:
 
@@ -68,7 +68,7 @@ Die Standardansicht zeigt heute bis heute + 6 Tage. Frühere unerledigte Termine
 
 ## Urlaubsmodus
 
-Eltern wählen **Urlaubsmodus**, Von und Bis einschließlich, danach Speichern. Weitere Zeiträume können ergänzt werden. Mit **Urlaub beenden / Planung aufheben** werden zukünftige Urlaubszeiträume aufgehoben und ein laufender Urlaub mit gestern beendet. Bereits vergangene Urlaubstage bleiben gespeichert, damit ausgelassene Termine nicht nachträglich wieder erscheinen. Das Setzen eines Urlaubs kann keine vergangenen Tage nachträglich überspringen.
+Vera und Manuel öffnen das **Zahnrad (Einstellungen)** und wählen dort **Urlaub planen / Verwalten**, Von und Bis einschließlich, danach Speichern. Weitere Zeiträume können ergänzt werden. Mit **Urlaub beenden / Planung aufheben** werden zukünftige Urlaubszeiträume aufgehoben und ein laufender Urlaub mit gestern beendet. Bereits vergangene Urlaubstage bleiben gespeichert, damit ausgelassene Termine nicht nachträglich wieder erscheinen. Das Setzen eines Urlaubs kann keine vergangenen Tage nachträglich überspringen.
 
 ## Speicherung und Grenzen
 
@@ -80,7 +80,7 @@ Grenzen: maximal 500 Vorlagen, keine zusätzlichen Erinnerungs-Pushes, kein Punk
 
 ## Validierung
 
-24 Tests prüfen Wiederholungen (einschließlich Monatspositionen und Schaltjahr), Urlaubsverhalten, getrennte Erledigungen, JSON-Wiederherstellung und serverseitige Rechte. DOM-Prüfungen decken die Sieben-Tage-Ansicht, Abhaken, Eltern-/Kinderbedienelemente, sichere Textdarstellung und Benutzerwechsel ab.
+25 Tests prüfen Wiederholungen (einschließlich Monatspositionen und Schaltjahr), Urlaubsverhalten, getrennte Erledigungen, JSON-Wiederherstellung und serverseitige Rechte. DOM-Prüfungen decken die Sieben-Tage-Ansicht, Abhaken, Eltern-/Kinderbedienelemente, sichere Textdarstellung und Benutzerwechsel ab.
 
 ```sh
 python3 -m unittest discover -s tests -v
@@ -89,3 +89,10 @@ node tests/test_card.cjs
 ```
 
 Python- und JavaScript-Syntax wurden geprüft. Ein Lauf in einer echten HA-Instanz und ein visueller Test mit deinen iPhones stehen aus.
+
+## Neu in 0.1.1
+
+- Urlaubsmodus und Urlaubsverwaltung befinden sich im Einstellungsbereich (Zahnrad).
+- Einstellungen sehen und ändern ausschließlich die in der Integration zugeordneten Konten von Vera und Manuel. Andere Administratoren erhalten dadurch keinen Zugriff auf den Urlaubsmodus.
+- Die Sieben-Tage-Ansicht blendet Tage ohne offene Einträge aus. Wird der letzte Termin eines Tages erledigt, verschwindet auch dessen Tagesüberschrift.
+- Das vorgemerkte Logo wird mit dieser Version noch nicht erstellt.
