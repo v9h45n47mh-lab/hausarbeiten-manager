@@ -1,0 +1,18 @@
+{
+  "domain": "hausarbeiten_manager",
+  "name": "Hausarbeiten Manager",
+  "version": "0.1.0",
+  "config_flow": true,
+  "codeowners": [
+    "@v9h45n47mh-lab"
+  ],
+  "documentation": "https://github.com/v9h45n47mh-lab/hausarbeiten-manager",
+  "issue_tracker": "https://github.com/v9h45n47mh-lab/hausarbeiten-manager/issues",
+  "dependencies": [
+    "frontend",
+    "http",
+    "websocket_api",
+    "calendar"
+  ],
+  "iot_class": "local_push"
+}

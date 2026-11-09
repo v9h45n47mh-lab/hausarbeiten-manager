@@ -1,0 +1,39 @@
+{
+  "title": "Hausarbeiten Manager",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Familienkonten zuordnen",
+        "description": "Für jede Person das eigene Home-Assistant-Benutzerkonto auswählen. Die Zuordnung bestimmt die Rechte im Backend.",
+        "data": {
+          "Vera": "Vera – HA-Benutzerkonto",
+          "Manuel": "Manuel – HA-Benutzerkonto",
+          "Maximilian": "Maximilian – HA-Benutzerkonto",
+          "Paul": "Paul – HA-Benutzerkonto"
+        }
+      }
+    },
+    "error": {
+      "distinct_users": "Jede Person benötigt ein eigenes Benutzerkonto."
+    },
+    "abort": {
+      "already_configured": "Hausarbeiten Manager ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Familienkonten ändern",
+        "data": {
+          "Vera": "Vera – HA-Benutzerkonto",
+          "Manuel": "Manuel – HA-Benutzerkonto",
+          "Maximilian": "Maximilian – HA-Benutzerkonto",
+          "Paul": "Paul – HA-Benutzerkonto"
+        }
+      }
+    },
+    "error": {
+      "distinct_users": "Jede Person benötigt ein eigenes Benutzerkonto."
+    }
+  }
+}
