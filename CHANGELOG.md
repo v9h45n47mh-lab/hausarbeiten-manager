@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.1.3
+
+- Versionsanzeige ausschließlich unter Einstellungen; Benutzername im Kopf entfernt.
+- Urlaubsmodus als dauerhafter Ein/Aus-Schalter ohne Zeitraum im Stil des Shutter Managers.
+- Nur Kinder dürfen ihre eigenen Aufgaben abhaken; Eltern sehen nur die Zuordnung.
+- Bisher aktive Urlaubszeiträume werden in einen eingeschalteten Schalter übernommen; zukünftige Zeitplanungen entfallen. Vergangene Pausen bleiben erhalten.
+
 ## 0.1.2
 
 - Elternverwaltung und Anlage von Hausarbeiten unter Einstellungen.

@@ -100,3 +100,9 @@ Python- und JavaScript-Syntax wurden geprüft. Ein Lauf in einer echten HA-Insta
 ## Neu in 0.1.2
 
 Vera und Manuel legen Hausarbeiten unter Einstellungen (Zahnrad) an und verwalten sie dort. Kinder haben auf der Hauptseite **+ Einmalige Arbeit**, ausschließlich für sich selbst. Kinder können keine Wiederholungen anlegen. Tagesüberschriften sind auf- und zuklappbar. Gleichnamige Aufgaben eines Tages werden in der Elternansicht zusammengefasst; jedes Kind behält ein eigenes Häkchen. Bei mehreren gleichnamigen Aufgaben desselben Kindes am selben Tag erledigt dessen Häkchen alle dazugehörigen Termine. Die Erledigung für das andere Kind bleibt offen.
+
+## Neu in 0.1.3
+
+Versionsnummer nur in Einstellungen; kein Benutzername im Kartenkopf. Urlaubsmodus über den Schalter unter Einstellungen ein-/ausschalten. Kein Zeitraum, keine automatische Abschaltung. Während der Pause entfallen Hausarbeiten; nach Ausschalten laufen sie ab heute wieder im gewohnten Rhythmus. Vergangene pausierte Tage bleiben ausgelassen. Beim Update wird ein aktuell laufender alter Urlaubszeitraum zu einem dauerhaft eingeschalteten Schalter; zukünftige alte Urlaubsplanungen entfallen.
+
+Nur Maximilian und Paul können jeweils eigene Termine abhaken. Vera und Manuel sehen die Zuordnung und verwalten Aufgaben, können aber keine Erledigungen vornehmen. Das wird im Backend geprüft.

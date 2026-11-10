@@ -126,21 +126,24 @@ class EngineTests(unittest.TestCase):
         two=e.complete(reloaded,ident,'Paul','2026-11-09',PAUL,TODAY)
         self.assertEqual(one,two)
 
-    def test_parent_can_complete_for_either_child(self):
+    def test_parent_cannot_complete_for_either_child(self):
         data=e.save_task(e.empty_data(),raw(),PARENT)
-        for person in e.CHILDREN:data=e.complete(data,data['tasks'][0]['id'],person,'2026-11-09',PARENT,TODAY)
-        self.assertEqual(e.occurrences(data,list(e.CHILDREN),TODAY,TODAY),[])
+        for person in e.CHILDREN:
+            with self.assertRaises(PermissionError):
+                e.complete(data,data['tasks'][0]['id'],person,'2026-11-09',PARENT,TODAY)
 
     def test_vacation_skips_dates_without_shifting_rhythm(self):
         data=e.save_task(e.empty_data(),raw(kind='daily',interval=2),PARENT)
-        paused=e.save_vacation(data,True,'2026-11-09','2026-11-12',PARENT,TODAY)
+        paused=e.save_vacation(data,True,PARENT,TODAY)
+        self.assertEqual(e.occurrences(paused,['Paul'],TODAY,date(2026,11,15)),[])
+        paused=e.save_vacation(paused,False,PARENT,date(2026,11,13))
         rows=e.occurrences(paused,['Paul'],TODAY,date(2026,11,15))
         self.assertEqual([r['date'] for r in rows],['2026-11-13','2026-11-15'])
 
     def test_ending_vacation_preserves_past_skipped_days(self):
         data=e.save_task(e.empty_data(),raw(kind='daily'),PARENT)
-        data=e.save_vacation(data,True,'2026-11-09','2026-11-20',PARENT,TODAY)
-        data=e.save_vacation(data,False,None,None,PARENT,date(2026,11,12))
+        data=e.save_vacation(data,True,PARENT,TODAY)
+        data=e.save_vacation(data,False,PARENT,date(2026,11,12))
         self.assertTrue(e.vacation_on(data,date(2026,11,11)))
         self.assertFalse(e.vacation_on(data,date(2026,11,12)))
 
@@ -148,16 +151,16 @@ class EngineTests(unittest.TestCase):
         for user_id in ['v', 'm']:
             actor=e.actor_for(user_id,MAPPING)
             self.assertTrue(e.can_manage_settings(actor))
-            e.save_vacation(e.empty_data(),True,'2026-11-09','2026-11-12',actor,TODAY)
+            e.save_vacation(e.empty_data(),True,actor,TODAY)
         for actor in [MAX,PAUL,e.actor_for('other_admin',MAPPING,True)]:
             self.assertFalse(e.can_manage_settings(actor))
             with self.assertRaises(PermissionError):
-                e.save_vacation(e.empty_data(),True,'2026-11-09','2026-11-12',actor,TODAY)
+                e.save_vacation(e.empty_data(),True,actor,TODAY)
             with self.assertRaises(PermissionError):
-                e.save_vacation(e.empty_data(),False,None,None,actor,TODAY)
+                e.save_vacation(e.empty_data(),False,actor,TODAY)
 
     def test_child_cannot_change_vacation(self):
-        with self.assertRaises(PermissionError):e.save_vacation(e.empty_data(),True,'2026-11-09','2026-11-12',PAUL,TODAY)
+        with self.assertRaises(PermissionError):e.save_vacation(e.empty_data(),True,PAUL,TODAY)
 
     def test_done_does_not_reappear_after_task_title_edit(self):
         data=e.save_task(e.empty_data(),raw(assignees=['Paul']),PAUL)
@@ -165,6 +168,16 @@ class EngineTests(unittest.TestCase):
         data=e.complete(data,task['id'],'Paul','2026-11-09',PAUL,TODAY)
         data=e.save_task(data,{**task,'title':'Anderer Titel'},PAUL)
         self.assertEqual(e.occurrences(data,['Paul'],TODAY,TODAY),[])
+
+    def test_vacation_migration(self):
+        old={'tasks':[],'done':{},'revision':2,'vacations':[{'start':'2026-11-08','end':'2026-11-12'}]}
+        migrated=e.migrate_vacation(old,TODAY)
+        self.assertTrue(migrated['vacation_enabled'])
+        self.assertTrue(e.vacation_on(migrated,date(2027,1,1)))
+        stopped=e.save_vacation(migrated,False,PARENT,date(2026,11,10))
+        self.assertTrue(e.vacation_on(stopped,TODAY))
+        self.assertFalse(e.vacation_on(stopped,date(2026,11,10)))
+        self.assertEqual(e.migrate_vacation(migrated,TODAY),migrated)
 
     def test_bad_inputs_rejected(self):
         for changes in [{'title':''},{'interval':0},{'weekdays':[8]},{'end':'2026-11-01'},{'kind':'magic'}]:

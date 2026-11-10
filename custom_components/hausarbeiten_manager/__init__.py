@@ -17,10 +17,10 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 from .engine import (CHILDREN, actor_for, can_edit, can_manage_settings, complete, delete_task, empty_data,
-                     occurrences, save_task, save_vacation, visible_people, vacation_on)
+                     migrate_vacation, occurrences, save_task, save_vacation, visible_people, vacation_on)
 
 DOMAIN = 'hausarbeiten_manager'
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 SIGNAL = DOMAIN + '_updated'
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,7 +64,10 @@ class Manager:
         self.last_day = None
 
     async def load(self):
-        self.data = await self.store.async_load() or empty_data()
+        stored = await self.store.async_load() or empty_data()
+        self.data = migrate_vacation(stored, self.today())
+        if self.data != stored:
+            await self.store.async_save(self.data)
         self.last_day = self.today()
 
     def today(self):
@@ -93,7 +96,7 @@ class Manager:
                 'person': actor['person'], 'parent': actor['parent'],
                 'settings_allowed': can_manage_settings(actor), 'people': people,
                 'tasks': tasks, 'occurrences': occurrences(self.data, people, today, today+timedelta(days=6)),
-                'vacation_active': vacation_on(self.data, today),
+                'vacation_active': self.data.get('vacation_enabled', False),
                 'vacations': deepcopy(self.data['vacations']) if can_manage_settings(actor) else [], 'version': VERSION}
 
     async def mutate(self, actor, revision, operation, payload):
@@ -107,7 +110,7 @@ class Manager:
             elif operation == 'delete':
                 result = delete_task(self.data, payload['task_id'], actor)
             else:
-                result = save_vacation(self.data, payload['enabled'], payload.get('start'), payload.get('end'), actor, self.today())
+                result = save_vacation(self.data, payload['enabled'], actor, self.today())
             result['revision'] = self.data['revision']+1
             # Publish only after durable storage succeeds.
             await self.store.async_save(result)
@@ -171,8 +174,7 @@ async def ws_delete(hass, connection, msg):
 
 
 @websocket_api.websocket_command({vol.Required('type'): DOMAIN+'/vacation',
-    vol.Required('revision'): vol.All(int, vol.Range(min=0)), vol.Required('enabled'): bool,
-    vol.Optional('start'): str, vol.Optional('end'): str})
+    vol.Required('revision'): vol.All(int, vol.Range(min=0)), vol.Required('enabled'): bool})
 @websocket_api.async_response
 async def ws_vacation(hass, connection, msg):
     await respond(hass, connection, msg, 'vacation')

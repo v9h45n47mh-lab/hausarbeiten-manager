@@ -10,7 +10,7 @@ KINDS = ('once', 'daily', 'weekly', 'monthly_nth')
 
 
 def empty_data():
-    return {'tasks': [], 'done': {}, 'vacations': [], 'revision': 0}
+    return {'tasks': [], 'done': {}, 'vacations': [], 'vacation_enabled': False, 'vacation_started': None, 'revision': 0}
 
 
 def iso_date(value):
@@ -96,6 +96,8 @@ def occurs(task, day):
 
 
 def vacation_on(data, day):
+    if data.get('vacation_enabled') and day >= iso_date(data['vacation_started']):
+        return True
     return any(iso_date(v['start']) <= day <= iso_date(v['end']) for v in data['vacations'])
 
 
@@ -149,7 +151,7 @@ def delete_task(data, task_id, actor):
 
 
 def complete(data, task_id, person, day_text, actor, today):
-    if person not in visible_people(actor):
+    if actor['person'] not in CHILDREN or person != actor['person']:
         raise PermissionError('Du kannst nur deine eigenen Hausarbeiten abhaken.')
     day = iso_date(day_text)
     if day > today+timedelta(days=6):
@@ -164,23 +166,29 @@ def complete(data, task_id, person, day_text, actor, today):
     return result
 
 
-def save_vacation(data, enabled, start, end, actor, today):
+def migrate_vacation(data, today):
+    result = deepcopy(data)
+    if 'vacation_enabled' not in result:
+        active = [v for v in result['vacations'] if iso_date(v['start']) <= today <= iso_date(v['end'])]
+        result['vacation_enabled'] = bool(active)
+        result['vacation_started'] = min(v['start'] for v in active) if active else None
+        # Past pauses remain; future scheduled ranges no longer control the switch.
+        result['vacations'] = [v for v in result['vacations'] if iso_date(v['end']) < today]
+    return result
+
+
+def save_vacation(data, enabled, actor, today):
     if not can_manage_settings(actor):
         raise PermissionError('Nur Vera und Manuel dürfen die Einstellungen ändern.')
-    result = deepcopy(data)
-    if enabled:
-        first, last = iso_date(start), iso_date(end)
-        if last < first or last < today:
-            raise ValueError('Bitte einen gültigen aktuellen oder zukünftigen Urlaubszeitraum wählen.')
-        # No retroactive hiding of older overdue tasks.
-        first = max(first, today)
-        result['vacations'].append({'id': uuid4().hex, 'start': first.isoformat(), 'end': last.isoformat()})
-    else:
-        retained = []
-        for item in result['vacations']:
-            if iso_date(item['end']) < today:
-                retained.append(item)
-            elif iso_date(item['start']) < today:
-                retained.append({**item, 'end': (today-timedelta(days=1)).isoformat()})
-        result['vacations'] = retained
+    result = migrate_vacation(data, today)
+    if enabled and not result['vacation_enabled']:
+        result['vacation_enabled'] = True
+        result['vacation_started'] = today.isoformat()
+    elif not enabled and result['vacation_enabled']:
+        first = iso_date(result['vacation_started'])
+        if first < today:
+            result['vacations'].append({'id': uuid4().hex, 'start': first.isoformat(),
+                                        'end': (today-timedelta(days=1)).isoformat()})
+        result['vacation_enabled'] = False
+        result['vacation_started'] = None
     return result
