@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.2.5
+
+- Einstellungssymbol exakt wie im Shutter Manager: identisches SVG, 24 px, grau im Normalzustand und HA-Akzentfarbe mit getöntem Hintergrund bei geöffneten Einstellungen.
+
 ## 0.2.4
 
 - Live-Sync für geöffnete Hausarbeiten-Karten: Änderungen lösen sofort einen individuell berechtigten Abruf aus.

@@ -1,5 +1,5 @@
-/* Hausarbeiten Manager 0.2.4 — no external frontend dependencies. */
-const HM_VERSION='0.2.4';
+/* Hausarbeiten Manager 0.2.5 — no external frontend dependencies. */
+const HM_VERSION='0.2.5';
 const hmEsc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hmDays=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const hmLabel=t=>{
@@ -64,8 +64,8 @@ class HausarbeitenManagerCard extends HTMLElement{
   if(!this._config)return;
   const d=this._data;
   if(this._tab==='settings'&&!d?.settings_allowed)this._tab='calendar';
-  this.shadowRoot.innerHTML=`<style>${HM_STYLE}</style><ha-card>
-    <div class="header"><ha-icon icon="mdi:calendar-check-outline"></ha-icon><span class="title">${hmEsc(this._config.title)}</span>${d?.settings_allowed?`<button data-tab="${this._tab==='settings'?'calendar':'settings'}" class="settings-button" aria-label="${this._tab==='settings'?'Zurück zu Hausarbeiten':'Einstellungen'}" title="${this._tab==='settings'?'Zurück':'Einstellungen'}"><ha-icon icon="${this._tab==='settings'?'mdi:arrow-left':'mdi:cog'}"></ha-icon></button>`:''}</div>
+  this.shadowRoot.innerHTML=`<style>${HM_STYLE}.header .settings-button{border:0;background:transparent;width:48px;min-width:48px;min-height:48px;flex-shrink:0;display:grid;place-items:center;padding:12px;border-radius:0;color:var(--secondary-text-color,#727272);cursor:pointer}.header .settings-button[aria-pressed="true"]{color:var(--primary-color,#03a9f4);background:color-mix(in srgb,var(--primary-color,#03a9f4) 8%,transparent)}.header .settings-button svg{width:24px;height:24px;fill:currentColor}@media(max-width:600px){.header .settings-button{width:42px;min-width:42px;padding:9px}}</style><ha-card>
+    <div class="header"><ha-icon icon="mdi:calendar-check-outline"></ha-icon><span class="title">${hmEsc(this._config.title)}</span>${d?.settings_allowed?`<button data-tab="${this._tab==='settings'?'calendar':'settings'}" class="settings-button" aria-pressed="${this._tab==='settings'}" aria-label="${this._tab==='settings'?'Zurück zu Hausarbeiten':'Einstellungen'}" title="${this._tab==='settings'?'Zurück':'Einstellungen'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.63l-1.92-3.32a.49.49 0 0 0-.6-.22l-2.39.96a7.1 7.1 0 0 0-1.62-.94l-.36-2.54a.49.49 0 0 0-.49-.42h-3.84a.49.49 0 0 0-.49.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.49.49 0 0 0-.6.22L2.68 8.85a.49.49 0 0 0 .12.63l2.03 1.58a7.3 7.3 0 0 0 0 1.88L2.8 14.52a.49.49 0 0 0-.12.63l1.92 3.32c.12.22.38.31.6.22l2.39-.96c.49.38 1.03.7 1.62.94l.36 2.54c.04.24.24.42.49.42h3.84c.25 0 .45-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.09.48 0 .6-.22l1.92-3.32a.49.49 0 0 0-.12-.63zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></button>`:''}</div>
     <div class="content">${this._error?`<div class="error" role="alert">${hmEsc(this._error)}</div>`:''}
     ${d?`${this._tab==='settings'?this.settings():`<div class="toolbar"><span class="pill">${d.occurrences.filter(r=>!r.completed).length} offen</span>${!d.parent?'<button class="add" data-add>+ Einmalige Arbeit</button>':''}</div>${this.calendar()}`}${this._tab==='settings'?`<div class="footer"><span>Hausarbeiten Manager · ${HM_VERSION}</span></div>`:''}`:`<div class="empty">${this._error?'Bitte Benutzerzuordnung und Access-Control-Freigabe prüfen.':'Hausarbeiten werden geladen …'}</div>`}
     </div></ha-card><div class="dialog-host"></div>`;
