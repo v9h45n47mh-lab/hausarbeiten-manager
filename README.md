@@ -191,8 +191,8 @@ Die aktive Karte verwendet nun HA UI Kit **1.1.0** aus dem lokalen Ordner `front
 
 ## UI-Kit-Update 0.3.2
 
-Aktive UI-Version: **1.2.0**, lokal unter `frontend/family-ui/1.2.0/`. Gemeinsame Bausteine für Aufgaben/Auswahlfelder beziehungsweise Statistik werden direkt genutzt. Daten, Funktionen, Karten-YAML und Berechtigungen bleiben gültig. Nach dem Update HA neu starten und Dashboard/App neu laden.
+Aktive UI-Version: **1.2.1**, lokal unter `frontend/family-ui/1.2.1/`. Gemeinsame Bausteine für Aufgaben/Auswahlfelder beziehungsweise Statistik werden direkt genutzt. Daten, Funktionen, Karten-YAML und Berechtigungen bleiben gültig. Nach dem Update HA neu starten und Dashboard/App neu laden.
 
 ## Strikte UI-Kit-Übereinstimmung ab 0.3.4
 
-Die Karten injizieren ausschließlich `UI_CSS` aus HA UI Kit 1.2.0. Es gibt keine lokalen visuellen CSS-Regeln. Aufgaben, Erledigungsereignisse, Wiederholungseditor und Dialoge beziehungsweise Verlaufsgruppen/Zähler und Statistiken verwenden die gemeinsamen Komponenten. Browserprüfungen liegen unter `tests/ui-browser.cjs` und laufen im Workflow „UI Kit browser verification“. Sie vergleichen die Gestaltung mit einer Kit-Referenzkarte bei 320/375/390/430/1100 px, hell/dunkel, einschließlich Dialogen, Rollenansichten und Live-Sync.
+Die Karten injizieren ausschließlich `UI_CSS` aus HA UI Kit 1.2.1. Es gibt keine lokalen visuellen CSS-Regeln. Aufgaben, Erledigungsereignisse, Wiederholungseditor und Dialoge beziehungsweise Verlaufsgruppen/Zähler und Statistiken verwenden die gemeinsamen Komponenten. Browserprüfungen liegen unter `tests/ui-browser.cjs` und laufen im Workflow „UI Kit browser verification“. Sie vergleichen die Gestaltung mit einer Kit-Referenzkarte bei 320/375/390/430/1100 px, hell/dunkel, einschließlich Dialogen, Rollenansichten und Live-Sync.

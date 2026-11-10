@@ -11,7 +11,7 @@ FRONTEND = COMPONENT / 'frontend'
 class UIKitTests(unittest.TestCase):
     def test_vendored_release_checksums(self):
         lock = json.loads((FRONTEND / 'family-ui.lock.json').read_text())
-        self.assertEqual(lock['version'], '1.2.0')
+        self.assertEqual(lock['version'], '1.2.1')
         release = FRONTEND / 'family-ui' / lock['version']
         for filename, digest in lock['files'].items():
             self.assertEqual(hashlib.sha256((release / filename).read_bytes()).hexdigest(), digest, filename)
@@ -30,7 +30,7 @@ class UIKitTests(unittest.TestCase):
         self.assertIs(ast.literal_eval(call.args[2]), False)
 
     def test_shared_responsive_theme_rules(self):
-        css = (FRONTEND / 'family-ui' / '1.2.0' / 'family-ui.css').read_text()
+        css = (FRONTEND / 'family-ui' / '1.2.1' / 'family-ui.css').read_text()
         self.assertIn('@media(max-width:600px)', css)
         self.assertIn('.grid{grid-template-columns:minmax(0,1fr)}', css)
         self.assertIn('main{padding:4px 12px 12px}', css)

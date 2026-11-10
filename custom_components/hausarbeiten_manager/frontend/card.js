@@ -1,4 +1,4 @@
-import {UI_CSS, UI_VERSION, navigation, section, row as uiRow, button, iconButton, toggle, field, selectField, dialog as uiDialog, notice, versionInfo, icon, escapeHtml, bindUI, completionRow, dayAgenda, checkboxGroup, weekdayPicker, textareaField, counter, recurrenceEditor, formError, confirmDialog} from './family-ui/1.2.0/family-ui.js';
+import {UI_CSS, UI_VERSION, navigation, section, row as uiRow, button, iconButton, toggle, field, selectField, dialog as uiDialog, notice, versionInfo, icon, escapeHtml, bindUI, completionRow, dayAgenda, checkboxGroup, weekdayPicker, textareaField, counter, recurrenceEditor, formError, confirmDialog} from './family-ui/1.2.1/family-ui.js';
 /* Hausarbeiten Manager 0.3.4 — no external frontend dependencies. */
 const HM_VERSION='0.3.4';
 const hmEsc=escapeHtml;
