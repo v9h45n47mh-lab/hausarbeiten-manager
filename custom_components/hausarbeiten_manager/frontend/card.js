@@ -1,6 +1,6 @@
-import {UI_CSS, UI_VERSION, navigation, section, row as uiRow, button, iconButton, toggle, field, selectField, dialog as uiDialog, notice, versionInfo, icon, escapeHtml, bindUI, completionRow, dayAgenda, checkboxGroup, weekdayPicker, textareaField, counter} from './family-ui/1.2.0/family-ui.js';
-/* Hausarbeiten Manager 0.3.3 — no external frontend dependencies. */
-const HM_VERSION='0.3.3';
+import {UI_CSS, UI_VERSION, navigation, section, row as uiRow, button, iconButton, toggle, field, selectField, dialog as uiDialog, notice, versionInfo, icon, escapeHtml, bindUI, completionRow, dayAgenda, checkboxGroup, weekdayPicker, textareaField, counter, recurrenceEditor, formError, confirmDialog} from './family-ui/1.2.0/family-ui.js';
+/* Hausarbeiten Manager 0.3.4 — no external frontend dependencies. */
+const HM_VERSION='0.3.4';
 const hmEsc=escapeHtml;
 const hmDays=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const hmLabel=t=>{
@@ -11,14 +11,12 @@ const hmLabel=t=>{
  const prefix=t.interval===1?'Monatlich':`Alle ${t.interval} Monate`;
  return t.kind==='monthly_date'?`${prefix} · am ${Number(t.start.slice(8))}. Tag`:`${prefix} · ${t.nth===-1?'Letzter':t.nth+'.'} ${t.weekdays.map(w=>hmDays[w]).join(', ')}`;
 };
-// Only task-specific layout and completion state; shared controls are styled by UI_CSS.
-const HM_STYLE=`.form{display:grid;gap:16px}.day-count{white-space:normal;text-align:right}.calendar-toolbar{margin-bottom:8px}`;
 const hmField=({name,...options})=>field({id:'hm-'+name,name,...options});
 const hmSelect=({name,...options})=>selectField({id:'hm-'+name,name,...options});
 const hmRow=(options,classes='')=>uiRow(options).replace('class="setting-row"',`class="setting-row row ${classes}"`);
 class HausarbeitenManagerCard extends HTMLElement{
  constructor(){super();this.attachShadow({mode:'open'});this._tab='calendar';this._busy=false;this._timer=null;this._error='';this._user=null;this._seq=0;this._closedDays=new Set();this._groups=[];this._active=false;this._dirty=false;this._unsub=null;this._subConn=null;this._subToken=0;this._bindUI();}
- _bindUI(){this._unbindUI ||= bindUI(this.shadowRoot,({action,data,checked})=>{if(action==='navigate'){if(data.page==='settings'&&!this._data?.settings_allowed)return;this._tab=data.page;this.render();}else if(action==='add')this.edit();else if(action==='edit')this.edit(this._data.tasks.find(t=>t.id===data.id));else if(action==='delete')this.confirmDelete(this._data.tasks.find(t=>t.id===data.id));else if(action==='vacation'&&this._data.settings_allowed)this.mutate('vacation',{enabled:checked});});}
+ _bindUI(){this._unbindUI ||= bindUI(this.shadowRoot,({action,data,checked,value,element})=>{if(action==='navigate'){if(data.page==='settings'&&!this._data?.settings_allowed)return;this._tab=data.page;this.render();}else if(action==='add')this.edit();else if(action==='edit')this.edit(this._data.tasks.find(t=>t.id===data.id));else if(action==='delete')this.confirmDelete(this._data.tasks.find(t=>t.id===data.id));else if(action==='completion-change')this._completeGroup(data.id,data.person);else if(action==='recurrence-change')this._syncAssignees(element,value);else if(action==='delete-confirm'){if(this._pendingDelete)this.mutate('delete_task',{task_id:this._pendingDelete});}else if(action==='vacation'&&this._data.settings_allowed)this.mutate('vacation',{enabled:checked});});}
  setConfig(config){this._config={title:'Hausarbeiten',...config};this.render();}
  set hass(hass){this._hass=hass;const user=hass.user?.id;if(user!==this._user){this._stopSubscription();this._seq++;this._user=user;this._data=null;this._loading=false;this.render();this.load();}else if(!this._data&&!this._loading)this.load();this._subscribe();}
  connectedCallback(){this._bindUI();this._active=true;if(!this._timer)this._timer=setInterval(()=>{this._subscribe();this.load();},15000);this._subscribe();if(this._hass)this.load();}
@@ -36,7 +34,7 @@ class HausarbeitenManagerCard extends HTMLElement{
  getCardSize(){return 7;}
  static getStubConfig(){return {title:'Hausarbeiten'};}
  async load(){if(!this._hass||this._loading||this._busy)return;this._dirty=false;this._loading=true;const seq=this._seq;try{const data=await this._hass.callWS({type:'hausarbeiten_manager/get'});if(seq!==this._seq||this._data&&(data.revision<this._data.revision||data.today<this._data.today))return;const changed=JSON.stringify(this._data)!==JSON.stringify(data);this._data=data;this._error='';if(changed){if(this.shadowRoot.querySelector('dialog[open]'))this._renderPending=true;else this.render();}}catch(e){if(seq===this._seq){this._error=e.message||'Verbindung fehlgeschlagen.';if(!this.shadowRoot.querySelector('dialog[open]'))this.render();}}finally{if(seq===this._seq){this._loading=false;if(this._dirty&&!this._busy&&!this.shadowRoot.querySelector('dialog[open]'))this.load();}}}
- async mutate(type,data){if(this._busy)return;this._busy=true;const seq=this._seq;this.shadowRoot.querySelectorAll('button,[data-group]').forEach(b=>b.disabled=true);try{const result=await this._hass.callWS({type:'hausarbeiten_manager/'+type,revision:this._data.revision,...data});if(seq!==this._seq)return;if(!this._data||result.revision>=this._data.revision)this._data=result;this._error='';const hadDialog=Boolean(this.shadowRoot.querySelector('dialog[open]'));this.render();if(hadDialog)this.shadowRoot.querySelector('[data-action="add"],nav button')?.focus();}catch(e){if(seq!==this._seq)return;this._error=e.message||'Speichern fehlgeschlagen.';const error=this.shadowRoot.querySelector('.form-error');if(error)error.textContent=this._error;else this.render();}finally{this._busy=false;this.shadowRoot.querySelectorAll('button,[data-group]').forEach(b=>b.disabled=false);if(this._dirty&&!this.shadowRoot.querySelector('dialog[open]'))this.load();}}
+ async mutate(type,data){if(this._busy)return;this._busy=true;const seq=this._seq;this.shadowRoot.querySelectorAll('button,[data-ui-completion] input').forEach(b=>b.disabled=true);try{const result=await this._hass.callWS({type:'hausarbeiten_manager/'+type,revision:this._data.revision,...data});if(seq!==this._seq)return;if(!this._data||result.revision>=this._data.revision)this._data=result;this._error='';if(type==='delete_task')this._pendingDelete=null;const hadDialog=Boolean(this.shadowRoot.querySelector('dialog[open]'));this.render();if(hadDialog)this.shadowRoot.querySelector('[data-action="add"],nav button')?.focus();}catch(e){if(seq!==this._seq)return;this._error=e.message||'Speichern fehlgeschlagen.';const error=this.shadowRoot.querySelector('.form-error');if(error){error.textContent=this._error;error.hidden=false;}else this.render();}finally{this._busy=false;this.shadowRoot.querySelectorAll('button,[data-ui-completion] input').forEach(b=>b.disabled=false);if(this._dirty&&!this.shadowRoot.querySelector('dialog[open]'))this.load();}}
  dayTitle(day){const d=new Date(day+'T12:00:00');return new Intl.DateTimeFormat('de-DE',{weekday:'long',day:'2-digit',month:'2-digit'}).format(d);}
  _rememberDays(){this.shadowRoot.querySelectorAll('[data-day]').forEach(el=>{const expanded=el.querySelector('.settings-fold')?.getAttribute('aria-expanded');if(expanded==='true')this._closedDays.delete(el.dataset.day);else if(expanded==='false')this._closedDays.add(el.dataset.day);});}
  calendar(){
@@ -61,17 +59,18 @@ class HausarbeitenManagerCard extends HTMLElement{
   if(!this._config)return;
   const d=this._data;this._rememberDays();
   if(this._tab==='settings'&&!d?.settings_allowed)this._tab='calendar';
-  this.shadowRoot.innerHTML=`<style>${UI_CSS}${HM_STYLE}</style><ha-card>
+  this.shadowRoot.innerHTML=`<style>${UI_CSS}</style><ha-card>
   ${navigation({label:this._config.title,items:[{id:'calendar',label:this._config.title}],active:this._tab,settings:Boolean(d?.settings_allowed),help:false})}
   <main>${this._error?notice(this._error,{error:true}):''}
-  ${d?(this._tab==='settings'?this.settings()+versionInfo({frontend:HM_VERSION,backend:d.version,ui:UI_VERSION}):`<div class="page-actions calendar-toolbar">${counter(d.occurrences.filter(r=>!r.completed).length+' offen').replace('class="fui-counter"','class="fui-counter pill"')}${!d.parent?button({label:'Einmalige Arbeit',icon:'add',action:'add'}):''}</div>${this.calendar()}`):notice(this._error?'Bitte Benutzerzuordnung und Access-Control-Freigabe prüfen.':'Hausarbeiten werden geladen …')}
+  ${d?(this._tab==='settings'?this.settings()+versionInfo({frontend:HM_VERSION,backend:d.version,ui:UI_VERSION}):`<div class="page-actions">${counter(d.occurrences.filter(r=>!r.completed).length+' offen').replace('class="fui-counter"','class="fui-counter pill"')}${!d.parent?button({label:'Einmalige Arbeit',icon:'add',action:'add'}):''}</div>${this.calendar()}`):notice(this._error?'Bitte Benutzerzuordnung und Access-Control-Freigabe prüfen.':'Hausarbeiten werden geladen …')}
   </main></ha-card><div class="dialog-host"></div>`;
-  this.shadowRoot.querySelectorAll('[data-ui-completion] input').forEach(control=>{const label=control.closest('[data-ui-completion]');control.dataset.group=label.dataset.id;control.dataset.person=label.dataset.person;control.setAttribute('aria-pressed',String(control.checked));});
-  this.shadowRoot.querySelectorAll('[data-group]').forEach(control=>control.onclick=async()=>{if(this._data.parent)return;const group=this._groups[Number(control.dataset.group)];const rows=group.rows.filter(r=>r.person===control.dataset.person);const operation=rows.every(r=>r.completed)?'reopen':'complete';for(const entry of rows.filter(r=>operation==='reopen'||!r.completed)){await this.mutate(operation,{task_id:entry.task_id,person:entry.person,date:entry.date});if(this._error)break;}});
  }
+ async _completeGroup(index,person){if(this._data.parent||this._busy)return;const group=this._groups[Number(index)];if(!group)return;const entries=group.rows.filter(r=>r.person===person);const operation=entries.every(r=>r.completed)?'reopen':'complete';for(const entry of entries.filter(r=>operation==='reopen'||!r.completed)){await this.mutate(operation,{task_id:entry.task_id,person:entry.person,date:entry.date});if(this._error)break;}}
+ _syncAssignees(control,rule){const form=control.closest('form');if(!form||!this._data.parent)return;form.querySelectorAll('[name="assignee"]').forEach(input=>{input.disabled=Boolean(rule.alternating);if(rule.alternating)input.checked=true;});}
+
  dialog(title,body){
  const host=this.shadowRoot.querySelector('.dialog-host');const opener=this.shadowRoot.activeElement;
- host.innerHTML=uiDialog({id:'hm-editor',title,content:`<form id="hm-form" class="form">${body}<div class="form-error" role="alert"></div></form>`,actions:button({label:'Abbrechen',action:'cancel'}).replace('data-action="cancel"','data-ui="close-dialog"')+'<button type="submit" class="primary" form="hm-form">'+icon('save')+'<span>Speichern</span></button>'});
+ host.innerHTML=uiDialog({id:'hm-editor',title,content:`<form id="hm-form" class="grid">${body}<div class="full">${formError('').replace('class="modal-save-error"','class="modal-save-error form-error"')}</div></form>`,actions:button({label:'Abbrechen',action:'cancel'}).replace('data-action="cancel"','data-ui="close-dialog"')+button({label:'Speichern',icon:'save',action:'save',variant:'primary'}).replace('type="button"','type="submit" form="hm-form"')});
  const modal=host.querySelector('dialog');modal.addEventListener('close',()=>{host.replaceChildren();if(this._renderPending){this._renderPending=false;this.render();}if(opener?.isConnected)opener.focus();else this.shadowRoot.querySelector('.settings-button,nav button')?.focus();if(this._dirty)this.load();});modal.showModal();return modal;
  }
  edit(task){
@@ -79,63 +78,29 @@ class HausarbeitenManagerCard extends HTMLElement{
  const today=this._data.today;
  const startWeekday=(new Date((task?.start||today)+'T12:00:00').getDay()+6)%7;
  const value=task||{title:'',description:'',assignees:this._data.parent?[]:[this._data.person],start:today,end:'',kind:'once',interval:1,weekdays:[startWeekday],nth:Math.ceil(Number(today.slice(8))/7)};
- const unit=value.kind==='daily'?'day':value.kind==='yearly'?'year':value.kind.startsWith('monthly')?'month':'week';
- const dialog=this.dialog(task?'Hausarbeit bearbeiten':'Hausarbeit anlegen',`
- ${hmField({name:'title',label:'Hausarbeit',required:true,value:value.title}).replace('<input ','<input maxlength="150" placeholder="Zum Beispiel: Zimmer aufräumen" ')}
- ${textareaField({id:'hm-description',name:'description',label:'Beschreibung (optional)',maxLength:2000,value:value.description})}
- ${this._data.parent?`${checkboxGroup({id:'hm-assignees',label:'Für wen?',items:['Maximilian','Paul'].map(p=>({value:p,label:p})),values:value.assignees}).replaceAll('<input ','<input name="assignee" ')}<div class="field"><label class="check"><input type="checkbox" name="alternating" ${value.alternating?'checked':''}>Abwechselnd</label>${hmSelect({name:'first_person',label:'Wer beginnt?',value:value.first_person||'Paul',options:['Paul','Maximilian'].map(p=>({value:p,label:p}))}).replace('class="field"','class="field first-person"')}</div>`:`<p class="hint">Für ${hmEsc(this._data.person)} · eigene Hausarbeit</p>`}
- ${hmField({name:'start',label:'Startdatum',type:'date',required:true,value:value.start})}
- <div class="recurrence" ${this._data.parent?'':'hidden'}>
- <label class="check"><input type="checkbox" name="repeating" ${value.kind!=='once'?'checked':''}>${icon('schedule')}Wiederkehrend</label>
- <div class="recurrence-controls">
- <div class="repeat-line"><span>Wiederholen alle</span><input type="number" name="interval" min="1" max="365" required aria-label="Wiederholungsabstand" value="${value.interval}"><select name="unit" aria-label="Wiederholungseinheit">${[['day','Tag'],['week','Woche'],['month','Monat'],['year','Jahr']].map(([id,label])=>`<option value="${id}" ${unit===id?'selected':''}>${label}</option>`).join('')}</select></div>
- ${hmSelect({name:'month_mode',label:'Monatliches Muster',value:value.kind==='monthly_nth'?'nth':'date',options:[{value:'date',label:'Am Tag des Startdatums'},{value:'nth',label:'An einem bestimmten Wochentag'}]}).replace('class="field"','class="field month-mode"')}
- ${hmSelect({name:'nth',label:'Welcher im Monat?',value:value.nth,options:[[1,'Erster'],[2,'Zweiter'],[3,'Dritter'],[4,'Vierter'],[5,'Fünfter'],[-1,'Letzter']].map(([value,label])=>({value,label}))}).replace('class="field"','class="field nth"')}
- ${weekdayPicker({id:'hm-weekdays',values:value.weekdays}).replace('class="fui-check-group"','class="fui-check-group repeat-weekdays"').replaceAll('<input ','<input name="weekday" ')}
- ${hmField({name:'end',label:'Bis (optional)',type:'date',value:value.end}).replace('class="field"','class="field repeat-until"').replace('<input ',`<input min="${hmEsc(value.start)}" `)}
- <p class="hint recurrence-hint" aria-live="polite"></p>
- </div></div>`);
+ const parts=[
+ hmField({name:'title',label:'Hausarbeit',required:true,value:value.title,maxLength:150,placeholder:'Zum Beispiel: Zimmer aufräumen'}),
+ textareaField({id:'hm-description',name:'description',label:'Beschreibung (optional)',maxLength:2000,value:value.description}),
+ this._data.parent?checkboxGroup({id:'hm-assignees',label:'Für wen?',items:['Maximilian','Paul'].map(p=>({value:p,label:p})),values:value.assignees}).replaceAll('<input ','<input name="assignee" '):`<p class="hint">Für ${hmEsc(this._data.person)} · eigene Hausarbeit</p>`,
+ this._data.parent?recurrenceEditor({id:'hm-recurrence',value,people:['Paul','Maximilian']}):hmField({name:'start',label:'Startdatum',type:'date',required:true,value:value.start})
+ ];
+ const dialog=this.dialog(task?'Hausarbeit bearbeiten':'Hausarbeit anlegen',parts.map(content=>`<div class="full">${content}</div>`).join(''));
  const form=dialog.querySelector('form');
  const input=name=>form.querySelector(`[name="${name}"]`);
  const readTask=()=>{
-   const repeating=this._data.parent&&input('repeating').checked;
-   const unit=input('unit').value;
-   const kind=!repeating?'once':unit==='day'?'daily':unit==='week'?'weekly':unit==='year'?'yearly':input('month_mode').value==='nth'?'monthly_nth':'monthly_date';
-   const weekdays=[...form.querySelectorAll('[name="weekday"]')].filter(el=>el.checked).map(el=>Number(el.value));
+   const recurring=this._data.parent&&input('repeating').checked;
+   const unit=input('unit')?.value;
+   const kind=!recurring?'once':unit==='day'?'daily':unit==='week'?'weekly':unit==='year'?'yearly':input('month_mode').value==='nth'?'monthly_nth':'monthly_date';
+   const weekdays=[...form.querySelectorAll('[data-ui-recurrence] [data-ui-checks] input')].filter(el=>el.checked).map(el=>Number(el.value));
    const start=input('start').value;
-   const result={title:input('title').value,description:input('description').value,start,end:repeating?input('end').value:'',kind,interval:repeating?Number(input('interval').value):1,weekdays:weekdays.length?weekdays:['weekly','monthly_nth'].includes(kind)?[]:[(new Date(start+'T12:00:00').getDay()+6)%7],nth:Number(input('nth').value),assignees:this._data.parent?[...form.querySelectorAll('[name="assignee"]')].filter(el=>el.checked).map(el=>el.value):[this._data.person]};
-   result.alternating=Boolean(this._data.parent&&input('alternating')?.checked);
-   result.first_person=result.alternating?input('first_person').value:'Paul';
-   if(result.alternating)result.assignees=['Maximilian','Paul'];
-   if(value.id)result.id=value.id;
-   return result;
+   const result={title:input('title').value,description:input('description').value,start,end:recurring?input('end').value:'',kind,interval:recurring?Number(input('interval').value):1,weekdays:weekdays.length?weekdays:['weekly','monthly_nth'].includes(kind)?[]:[(new Date(start+'T12:00:00').getDay()+6)%7],nth:Number(input('nth')?.value||1),assignees:this._data.parent?[...form.querySelectorAll('[name="assignee"]')].filter(el=>el.checked).map(el=>el.value):[this._data.person],alternating:Boolean(this._data.parent&&input('alternating')?.checked)};
+   result.first_person=result.alternating?input('first_person').value:'Paul';if(result.alternating)result.assignees=['Maximilian','Paul'];if(value.id)result.id=value.id;return result;
  };
- const update=event=>{
-   if(this._data.parent){
-     if(event?.target===input('repeating')&&!input('repeating').checked)input('alternating').checked=false;
-     const alternate=input('alternating').checked;
-     if(alternate)input('repeating').checked=true;
-     dialog.querySelector('.first-person').hidden=!alternate;
-     form.querySelectorAll('[name="assignee"]').forEach(el=>{el.disabled=alternate;if(alternate)el.checked=true;});
-   }
-   const task=readTask();const repeated=task.kind!=='once';
-   dialog.querySelector('.recurrence-controls').hidden=!repeated;
-   input('interval').disabled=!repeated;
-   input('end').disabled=!repeated;input('end').min=input('start').value;
-   dialog.querySelector('.month-mode').hidden=input('unit').value!=='month';
-   dialog.querySelector('.repeat-weekdays').hidden=!['weekly','monthly_nth'].includes(task.kind);
-   dialog.querySelector('.nth').hidden=task.kind!=='monthly_nth';
-   if(!task.start||!Number.isFinite(new Date(task.start+'T12:00:00').getTime())){dialog.querySelector('.recurrence-hint').textContent='Bitte ein Startdatum auswählen.';return;}
-   let note=repeated&&task.weekdays.length?hmLabel(task):'Bitte mindestens einen Wochentag auswählen.';
-   if(task.alternating)note+=' · Abwechselnd, Beginn: '+task.first_person;
-   if(task.kind==='monthly_date'&&Number(task.start.slice(8))>28)note+=' · Monate ohne diesen Tag werden übersprungen.';
-   if(task.kind==='yearly'&&task.start.slice(5)==='02-29')note+=' · Jahre ohne den 29. Februar werden übersprungen.';
-   dialog.querySelector('.recurrence-hint').textContent=note;
- };
- form.addEventListener('change',update);form.addEventListener('input',update);update();
- form.onsubmit=e=>{e.preventDefault();const task=readTask();if(!task.weekdays.length){dialog.querySelector('.form-error').textContent='Bitte mindestens einen Wochentag auswählen.';return;}this.mutate('save_task',{task});};
+ const recurrence=form.querySelector('[data-ui-recurrence]');if(recurrence)this._syncAssignees(recurrence,value);
+ form.onsubmit=e=>{e.preventDefault();const task=readTask();if(!task.weekdays.length){const error=dialog.querySelector('.form-error');error.textContent='Bitte mindestens einen Wochentag auswählen.';error.hidden=false;return;}this.mutate('save_task',{task});};
  }
- confirmDelete(task){if(!task)return;const dialog=this.dialog('Hausarbeit löschen',`<p class="hint">„${hmEsc(task.title)}“ mit allen zukünftigen Terminen löschen?</p>`);dialog.querySelector('button[type="submit"]').innerHTML=icon('trash')+'<span>Löschen</span>';dialog.querySelector('button[type="submit"]').className='danger';dialog.querySelector('form').onsubmit=e=>{e.preventDefault();this.mutate('delete_task',{task_id:task.id});};}
+ confirmDelete(task){if(!task||!task.editable)return;this._pendingDelete=task.id;const host=this.shadowRoot.querySelector('.dialog-host');const opener=this.shadowRoot.activeElement;host.innerHTML=confirmDialog({id:'hm-delete',title:'Hausarbeit löschen',message:'„'+task.title+'“ mit allen zukünftigen Terminen löschen?',confirmAction:'delete-confirm'});const modal=host.querySelector('dialog');modal.addEventListener('close',()=>{this._pendingDelete=null;host.replaceChildren();if(this._renderPending){this._renderPending=false;this.render();}if(opener?.isConnected)opener.focus();if(this._dirty)this.load();});modal.showModal();}
+
 }
 if(!customElements.get('hausarbeiten-manager-card'))customElements.define('hausarbeiten-manager-card',HausarbeitenManagerCard);
 window.customCards=window.customCards||[];if(!window.customCards.some(c=>c.type==='hausarbeiten-manager-card'))window.customCards.push({type:'hausarbeiten-manager-card',name:'Hausarbeiten Manager',description:'Familienaufgaben mit Sieben-Tage-Kalender und Erledigt-Häkchen'});

@@ -1,7 +1,7 @@
 {
   "domain": "hausarbeiten_manager",
   "name": "Hausarbeiten Manager",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "config_flow": true,
   "codeowners": [
     "@v9h45n47mh-lab"

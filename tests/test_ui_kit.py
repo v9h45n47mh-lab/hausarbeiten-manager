@@ -39,3 +39,10 @@ class UIKitTests(unittest.TestCase):
         self.assertIn('min-height:var(--fui-touch)', css)
         self.assertIn('overflow-wrap:anywhere', css)
         self.assertIn('max-height:96dvh', css)
+
+    def test_no_local_visual_overrides(self):
+        card = (FRONTEND / 'card.js').read_text()
+        self.assertIn('<style>${UI_CSS}</style>', card)
+        self.assertNotIn('HM_STYLE', card)
+        self.assertNotIn('SV_STYLE', card)
+        self.assertNotIn('<svg', card)
