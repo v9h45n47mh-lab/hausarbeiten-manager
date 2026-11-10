@@ -1,6 +1,6 @@
 import {UI_CSS, UI_VERSION, navigation, section, row as uiRow, button, iconButton, toggle, field, selectField, dialog as uiDialog, notice, versionInfo, icon, escapeHtml, bindUI, completionRow, dayAgenda, checkboxGroup, weekdayPicker, textareaField, counter} from './family-ui/1.2.0/family-ui.js';
-/* Hausarbeiten Manager 0.3.2 — no external frontend dependencies. */
-const HM_VERSION='0.3.2';
+/* Hausarbeiten Manager 0.3.3 — no external frontend dependencies. */
+const HM_VERSION='0.3.3';
 const hmEsc=escapeHtml;
 const hmDays=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const hmLabel=t=>{
@@ -56,7 +56,7 @@ class HausarbeitenManagerCard extends HTMLElement{
  }return out||notice('Keine offenen Hausarbeiten in den nächsten 7 Tagen.');
  }
  tasks(){return this._data.tasks.length?this._data.tasks.map(task=>hmRow({title:task.title,description:task.assignees.join(' · ')+(task.alternating?' · Abwechselnd (Start: '+task.first_person+')':'')+' · '+hmLabel(task)+' · Ab '+this.dayTitle(task.start)+(task.end?' · bis '+this.dayTitle(task.end):''),trailing:task.editable?iconButton({icon:'edit',label:task.title+' bearbeiten',action:'edit',data:{id:task.id}})+iconButton({icon:'trash',label:task.title+' löschen',action:'delete',danger:true,data:{id:task.id}}):''})).join(''):notice('Noch keine Hausarbeiten angelegt.');}
- settings(){if(!this._data.settings_allowed)return '';return uiRow({title:'Urlaubsmodus',trailing:toggle({label:'Urlaubsmodus',action:'vacation',checked:this._data.vacation_active})})+section({id:'tasks',title:'Hausarbeiten',trailing:button({label:'Hausarbeit',icon:'add',action:'add'}),content:this.tasks()});}
+ settings(){if(!this._data.settings_allowed)return '';return uiRow({title:'Urlaubsmodus',trailing:toggle({label:'Urlaubsmodus',action:'vacation',checked:this._data.vacation_active})})+section({id:'tasks',title:'Hausarbeiten',trailing:button({label:'Hausarbeit',icon:'add',action:'add',variant:'primary'}),content:this.tasks()});}
  render(){
   if(!this._config)return;
   const d=this._data;this._rememberDays();

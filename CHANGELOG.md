@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.3.3
+
+- „+ Hausarbeit“ in den Einstellungen verwendet den blauen Primärbutton aus HA UI Kit 1.2.0.
+
 ## 0.3.2
 
 - HA UI Kit auf fest eingebundene Version 1.2.0 aktualisiert.
