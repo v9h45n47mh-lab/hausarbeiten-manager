@@ -1,6 +1,6 @@
-import {UI_CSS, UI_VERSION, navigation, section, row as uiRow, button, iconButton, toggle, field, selectField, dialog as uiDialog, notice, versionInfo, icon, escapeHtml, bindUI} from './family-ui/1.1.0/family-ui.js';
-/* Hausarbeiten Manager 0.3.1 — no external frontend dependencies. */
-const HM_VERSION='0.3.1';
+import {UI_CSS, UI_VERSION, navigation, section, row as uiRow, button, iconButton, toggle, field, selectField, dialog as uiDialog, notice, versionInfo, icon, escapeHtml, bindUI, completionRow, dayAgenda, checkboxGroup, weekdayPicker, textareaField, counter} from './family-ui/1.2.0/family-ui.js';
+/* Hausarbeiten Manager 0.3.2 — no external frontend dependencies. */
+const HM_VERSION='0.3.2';
 const hmEsc=escapeHtml;
 const hmDays=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const hmLabel=t=>{
@@ -12,16 +12,9 @@ const hmLabel=t=>{
  return t.kind==='monthly_date'?`${prefix} · am ${Number(t.start.slice(8))}. Tag`:`${prefix} · ${t.nth===-1?'Letzter':t.nth+'.'} ${t.weekdays.map(w=>hmDays[w]).join(', ')}`;
 };
 // Only task-specific layout and completion state; shared controls are styled by UI_CSS.
-const HM_STYLE=`
-.completed .row-text strong,.assignee.completed{text-decoration:line-through;color:var(--secondary-text-color,#727272)}
-.checks{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.assignee{font-size:12px;color:var(--secondary-text-color,#727272)}
-.complete{display:grid;place-items:center;min-width:var(--fui-touch);min-height:var(--fui-touch);cursor:pointer}
-.choices{display:flex;gap:16px;flex-wrap:wrap}.choices label,.repeat-toggle{display:inline-flex;gap:8px;align-items:center;min-height:var(--fui-touch)}
-.recurrence-controls{display:grid;gap:16px}.repeat-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.repeat-line input{max-width:80px}.repeat-line select{max-width:120px}.repeat-weekdays{display:flex;gap:8px;flex-wrap:wrap}.repeat-weekdays label{display:flex;align-items:center;gap:4px;min-height:var(--fui-touch)}
-.form{display:grid;gap:16px}.day-count{white-space:normal;text-align:right}.calendar-toolbar{margin-bottom:8px}
-`;
-const hmField=({name,...options})=>field({id:'hm-'+name,...options}).replace('<input ',`<input name="${escapeHtml(name)}" `);
-const hmSelect=({name,...options})=>selectField({id:'hm-'+name,...options}).replace('<select ',`<select name="${escapeHtml(name)}" `);
+const HM_STYLE=`.form{display:grid;gap:16px}.day-count{white-space:normal;text-align:right}.calendar-toolbar{margin-bottom:8px}`;
+const hmField=({name,...options})=>field({id:'hm-'+name,name,...options});
+const hmSelect=({name,...options})=>selectField({id:'hm-'+name,name,...options});
 const hmRow=(options,classes='')=>uiRow(options).replace('class="setting-row"',`class="setting-row row ${classes}"`);
 class HausarbeitenManagerCard extends HTMLElement{
  constructor(){super();this.attachShadow({mode:'open'});this._tab='calendar';this._busy=false;this._timer=null;this._error='';this._user=null;this._seq=0;this._closedDays=new Set();this._groups=[];this._active=false;this._dirty=false;this._unsub=null;this._subConn=null;this._subToken=0;this._bindUI();}
@@ -56,10 +49,10 @@ class HausarbeitenManagerCard extends HTMLElement{
  for(const entry of entries){let group=this._data.parent?groups.find(g=>g.title===entry.title):null;if(!group){group={title:entry.title,rows:[]};groups.push(group);}group.rows.push(entry);}
  const content=groups.map(group=>{const index=this._groups.push(group)-1;
  const descriptions=[...new Set(group.rows.map(r=>r.description).filter(Boolean))];
- const checks=[...new Set(group.rows.map(r=>r.person))].map(person=>{const done=group.rows.filter(r=>r.person===person).every(r=>r.completed);return this._data.parent?`<span class="assignee ${done?'completed':''}">${hmEsc(person)}${done?icon('success'):''}</span>`:`<label class="complete"><input type="checkbox" data-group="${index}" data-person="${hmEsc(person)}" aria-pressed="${done}" ${done?'checked':''} aria-label="${hmEsc(group.title+' für '+person+(done?' wieder öffnen':' erledigen'))}"></label>`;}).join('');
- return hmRow({title:group.title,description:descriptions.join(' · '),trailing:`<div class="checks">${checks}</div>`},group.rows.every(r=>r.completed)?'completed':'');
+ const people=[...new Set(group.rows.map(r=>r.person))].map(person=>({id:person,label:person,completed:group.rows.filter(r=>r.person===person).every(r=>r.completed)}));
+ return completionRow({id:String(index),title:group.title,description:descriptions.join(' · '),people,readOnly:this._data.parent}).replace('class="setting-row', 'class="row setting-row');
  }).join('');
- out+=`<div class="day" data-day="${day}">${section({id:'day-'+day,title:(i===0?'Heute · ':i===1?'Morgen · ':'')+this.dayTitle(day),expanded:!this._closedDays.has(day),trailing:`<small class="day-count">${entries.filter(r=>!r.completed).length} offen${entries.some(r=>r.completed)?` · ${entries.filter(r=>r.completed).length} erledigt`:''}</small>`,content})}</div>`;
+ out+=`<div class="day" data-day="${day}">${dayAgenda({id:'day-'+day,days:[{title:(i===0?'Heute · ':i===1?'Morgen · ':'')+this.dayTitle(day),expanded:!this._closedDays.has(day),count:entries.filter(r=>!r.completed).length+' offen'+(entries.some(r=>r.completed)?' · '+entries.filter(r=>r.completed).length+' erledigt':''),content}]})}</div>`;
  }return out||notice('Keine offenen Hausarbeiten in den nächsten 7 Tagen.');
  }
  tasks(){return this._data.tasks.length?this._data.tasks.map(task=>hmRow({title:task.title,description:task.assignees.join(' · ')+(task.alternating?' · Abwechselnd (Start: '+task.first_person+')':'')+' · '+hmLabel(task)+' · Ab '+this.dayTitle(task.start)+(task.end?' · bis '+this.dayTitle(task.end):''),trailing:task.editable?iconButton({icon:'edit',label:task.title+' bearbeiten',action:'edit',data:{id:task.id}})+iconButton({icon:'trash',label:task.title+' löschen',action:'delete',danger:true,data:{id:task.id}}):''})).join(''):notice('Noch keine Hausarbeiten angelegt.');}
@@ -71,8 +64,9 @@ class HausarbeitenManagerCard extends HTMLElement{
   this.shadowRoot.innerHTML=`<style>${UI_CSS}${HM_STYLE}</style><ha-card>
   ${navigation({label:this._config.title,items:[{id:'calendar',label:this._config.title}],active:this._tab,settings:Boolean(d?.settings_allowed),help:false})}
   <main>${this._error?notice(this._error,{error:true}):''}
-  ${d?(this._tab==='settings'?this.settings()+versionInfo({frontend:HM_VERSION,backend:d.version,ui:UI_VERSION}):`<div class="page-actions calendar-toolbar"><small class="pill">${d.occurrences.filter(r=>!r.completed).length} offen</small>${!d.parent?button({label:'Einmalige Arbeit',icon:'add',action:'add'}):''}</div>${this.calendar()}`):notice(this._error?'Bitte Benutzerzuordnung und Access-Control-Freigabe prüfen.':'Hausarbeiten werden geladen …')}
+  ${d?(this._tab==='settings'?this.settings()+versionInfo({frontend:HM_VERSION,backend:d.version,ui:UI_VERSION}):`<div class="page-actions calendar-toolbar">${counter(d.occurrences.filter(r=>!r.completed).length+' offen').replace('class="fui-counter"','class="fui-counter pill"')}${!d.parent?button({label:'Einmalige Arbeit',icon:'add',action:'add'}):''}</div>${this.calendar()}`):notice(this._error?'Bitte Benutzerzuordnung und Access-Control-Freigabe prüfen.':'Hausarbeiten werden geladen …')}
   </main></ha-card><div class="dialog-host"></div>`;
+  this.shadowRoot.querySelectorAll('[data-ui-completion] input').forEach(control=>{const label=control.closest('[data-ui-completion]');control.dataset.group=label.dataset.id;control.dataset.person=label.dataset.person;control.setAttribute('aria-pressed',String(control.checked));});
   this.shadowRoot.querySelectorAll('[data-group]').forEach(control=>control.onclick=async()=>{if(this._data.parent)return;const group=this._groups[Number(control.dataset.group)];const rows=group.rows.filter(r=>r.person===control.dataset.person);const operation=rows.every(r=>r.completed)?'reopen':'complete';for(const entry of rows.filter(r=>operation==='reopen'||!r.completed)){await this.mutate(operation,{task_id:entry.task_id,person:entry.person,date:entry.date});if(this._error)break;}});
  }
  dialog(title,body){
@@ -88,16 +82,16 @@ class HausarbeitenManagerCard extends HTMLElement{
  const unit=value.kind==='daily'?'day':value.kind==='yearly'?'year':value.kind.startsWith('monthly')?'month':'week';
  const dialog=this.dialog(task?'Hausarbeit bearbeiten':'Hausarbeit anlegen',`
  ${hmField({name:'title',label:'Hausarbeit',required:true,value:value.title}).replace('<input ','<input maxlength="150" placeholder="Zum Beispiel: Zimmer aufräumen" ')}
- <label class="field" for="hm-description"><span>Beschreibung (optional)</span><textarea id="hm-description" name="description" maxlength="2000">${hmEsc(value.description)}</textarea></label>
- ${this._data.parent?`<div class="field"><span>Für wen?</span><div class="choices">${['Maximilian','Paul'].map(p=>`<label><input type="checkbox" name="assignee" value="${p}" ${value.assignees.includes(p)?'checked':''}>${p}</label>`).join('')}</div></div><div class="field"><label class="repeat-toggle"><input type="checkbox" name="alternating" ${value.alternating?'checked':''}>Abwechselnd</label>${hmSelect({name:'first_person',label:'Wer beginnt?',value:value.first_person||'Paul',options:['Paul','Maximilian'].map(p=>({value:p,label:p}))}).replace('class="field"','class="field first-person"')}</div>`:`<p class="hint">Für ${hmEsc(this._data.person)} · eigene Hausarbeit</p>`}
+ ${textareaField({id:'hm-description',name:'description',label:'Beschreibung (optional)',maxLength:2000,value:value.description})}
+ ${this._data.parent?`${checkboxGroup({id:'hm-assignees',label:'Für wen?',items:['Maximilian','Paul'].map(p=>({value:p,label:p})),values:value.assignees}).replaceAll('<input ','<input name="assignee" ')}<div class="field"><label class="check"><input type="checkbox" name="alternating" ${value.alternating?'checked':''}>Abwechselnd</label>${hmSelect({name:'first_person',label:'Wer beginnt?',value:value.first_person||'Paul',options:['Paul','Maximilian'].map(p=>({value:p,label:p}))}).replace('class="field"','class="field first-person"')}</div>`:`<p class="hint">Für ${hmEsc(this._data.person)} · eigene Hausarbeit</p>`}
  ${hmField({name:'start',label:'Startdatum',type:'date',required:true,value:value.start})}
  <div class="recurrence" ${this._data.parent?'':'hidden'}>
- <label class="repeat-toggle"><input type="checkbox" name="repeating" ${value.kind!=='once'?'checked':''}>${icon('schedule')}Wiederkehrend</label>
+ <label class="check"><input type="checkbox" name="repeating" ${value.kind!=='once'?'checked':''}>${icon('schedule')}Wiederkehrend</label>
  <div class="recurrence-controls">
  <div class="repeat-line"><span>Wiederholen alle</span><input type="number" name="interval" min="1" max="365" required aria-label="Wiederholungsabstand" value="${value.interval}"><select name="unit" aria-label="Wiederholungseinheit">${[['day','Tag'],['week','Woche'],['month','Monat'],['year','Jahr']].map(([id,label])=>`<option value="${id}" ${unit===id?'selected':''}>${label}</option>`).join('')}</select></div>
  ${hmSelect({name:'month_mode',label:'Monatliches Muster',value:value.kind==='monthly_nth'?'nth':'date',options:[{value:'date',label:'Am Tag des Startdatums'},{value:'nth',label:'An einem bestimmten Wochentag'}]}).replace('class="field"','class="field month-mode"')}
  ${hmSelect({name:'nth',label:'Welcher im Monat?',value:value.nth,options:[[1,'Erster'],[2,'Zweiter'],[3,'Dritter'],[4,'Vierter'],[5,'Fünfter'],[-1,'Letzter']].map(([value,label])=>({value,label}))}).replace('class="field"','class="field nth"')}
- <div class="repeat-weekdays" role="group" aria-label="Wochentage">${hmDays.map((day,i)=>`<label title="${['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'][i]}"><input type="checkbox" name="weekday" value="${i}" aria-label="${day}" ${value.weekdays.includes(i)?'checked':''}><span>${['M','D','M','D','F','S','S'][i]}</span></label>`).join('')}</div>
+ ${weekdayPicker({id:'hm-weekdays',values:value.weekdays}).replace('class="fui-check-group"','class="fui-check-group repeat-weekdays"').replaceAll('<input ','<input name="weekday" ')}
  ${hmField({name:'end',label:'Bis (optional)',type:'date',value:value.end}).replace('class="field"','class="field repeat-until"').replace('<input ',`<input min="${hmEsc(value.start)}" `)}
  <p class="hint recurrence-hint" aria-live="polite"></p>
  </div></div>`);

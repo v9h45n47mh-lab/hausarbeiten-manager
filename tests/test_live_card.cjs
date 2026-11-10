@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),{readFileSync}=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {parseHTML}=require('linkedom');const {window}=parseHTML('<html><body></body></html>');
-vm.runInNewContext(require('./card_source.cjs')(),{window,HTMLElement:window.HTMLElement,customElements:window.customElements,Intl,Date,setInterval:()=>1,clearInterval:()=>{},Number,JSON,String,Set});
+vm.runInNewContext(require('./card_source.cjs')(),{window,MutationObserver:window.MutationObserver,HTMLElement:window.HTMLElement,customElements:window.customElements,Intl,Date,setInterval:()=>1,clearInterval:()=>{},Number,JSON,String,Set});
 const Card=window.customElements.get('hausarbeiten-manager-card');
 const flush=async()=>{for(let i=0;i<5;i++)await new Promise(resolve=>setImmediate(resolve))};
 let revision=0,done=false;const listeners=new Set();

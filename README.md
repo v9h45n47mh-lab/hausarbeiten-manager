@@ -188,3 +188,7 @@ Die Karte verwendet HA UI Kit **1.0.0**, fest mitgeliefert unter `frontend/famil
 ## UI-Kit-Update 0.3.1
 
 Die aktive Karte verwendet nun HA UI Kit **1.1.0** aus dem lokalen Ordner `frontend/family-ui/1.1.0/`. Die bisherigen Funktionen, Daten, Karten-YAML und Berechtigungen bleiben erhalten. Die neuen Programm- und Sortierkomponenten des Kits stehen mit zur Verfügung; diese Anwendungen besitzen keine Programm-Sortierfunktion.
+
+## UI-Kit-Update 0.3.2
+
+Aktive UI-Version: **1.2.0**, lokal unter `frontend/family-ui/1.2.0/`. Gemeinsame Bausteine für Aufgaben/Auswahlfelder beziehungsweise Statistik werden direkt genutzt. Daten, Funktionen, Karten-YAML und Berechtigungen bleiben gültig. Nach dem Update HA neu starten und Dashboard/App neu laden.

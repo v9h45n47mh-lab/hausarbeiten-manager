@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.3.2
+
+- HA UI Kit auf fest eingebundene Version 1.2.0 aktualisiert.
+- Passende gemeinsame Aufgaben-, Auswahl- und Statistikbausteine direkt verwendet; lokale Kopien gemeinsamer Stile entfernt.
+- Bestehende Aufgaben-, Live-Sync-, NFC- und Berechtigungslogik erhalten.
+
 ## 0.3.1
 
 - Fest eingebundenes HA UI Kit auf 1.1.0 aktualisiert, einschließlich der neuesten gemeinsamen Komponenten und Symbole.
