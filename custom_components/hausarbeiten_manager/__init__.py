@@ -12,7 +12,7 @@ from homeassistant.components import frontend, websocket_api
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.const import Platform
 from homeassistant.core import callback
-from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
@@ -20,7 +20,7 @@ from .engine import (CHILDREN, actor_for, can_edit, can_manage_settings, complet
                      migrate_vacation, occurrences, reopen, save_task, save_vacation, visible_people, vacation_on)
 
 DOMAIN = 'hausarbeiten_manager'
-VERSION = '0.2.3'
+VERSION = '0.2.4'
 SIGNAL = DOMAIN + '_updated'
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ async def async_setup(hass, config):
     await hass.http.async_register_static_paths([StaticPathConfig(
         '/hausarbeiten-manager/card.js', str(Path(__file__).parent/'frontend'/'card.js'), False)])
     frontend.add_extra_js_url(hass, '/hausarbeiten-manager/card.js?v='+VERSION)
-    for command in (ws_get, ws_save, ws_complete, ws_reopen, ws_delete, ws_vacation):
+    for command in (ws_get, ws_subscribe, ws_save, ws_complete, ws_reopen, ws_delete, ws_vacation):
         websocket_api.async_register_command(hass, command)
     return True
 
@@ -151,6 +151,33 @@ async def respond(hass, connection, msg, operation=None):
 @websocket_api.async_response
 async def ws_get(hass, connection, msg):
     await respond(hass, connection, msg)
+
+
+@websocket_api.websocket_command({vol.Required('type'): DOMAIN+'/subscribe'})
+@websocket_api.async_response
+async def ws_subscribe(hass, connection, msg):
+    """Notify authorized clients to fetch a fresh, individually filtered snapshot.
+
+    No task or user data is broadcast. Every fetch rechecks the current actor.
+    An initial event also covers reconnects and the gap after the first GET.
+    """
+    manager = hass.data.get(DOMAIN)
+    if manager is None:
+        connection.send_error(msg['id'], 'not_loaded', 'Hausarbeiten Manager ist nicht geladen.')
+        return
+    try:
+        manager.actor(connection.user)
+    except PermissionError as err:
+        connection.send_error(msg['id'], 'unauthorized', str(err))
+        return
+
+    @callback
+    def changed():
+        connection.send_message(websocket_api.event_message(msg['id'], {}))
+
+    connection.subscriptions[msg['id']] = async_dispatcher_connect(hass, SIGNAL, changed)
+    connection.send_result(msg['id'])
+    changed()
 
 
 @websocket_api.websocket_command({vol.Required('type'): DOMAIN+'/save_task',

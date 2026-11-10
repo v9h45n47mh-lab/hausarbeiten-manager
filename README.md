@@ -162,3 +162,21 @@ Die separate Tabzeile „Nächste 7 Tage“ und der Aktualisieren-Button entfall
 Die automatische Aktualisierung alle 15 Sekunden bleibt bestehen. Zusätzlich kann die Ansicht über die Aktualisierungsfunktion der HA-App (nach unten ziehen, sofern dort verfügbar) neu geladen werden. Kein zusätzlicher Zieh-Handler in der Karte.
 
 Frontend-DOM-Prüfungen und JavaScript-Syntaxprüfung erfolgreich. Marketplace-Update installieren, HA neu starten und Dashboard/App neu laden. Dashboard-YAML bleibt gültig.
+
+## Live-Sync ab 0.2.4
+
+Abhaken, Wiederöffnen, Änderungen an Aufgaben und Urlaubsmodus werden sofort an geöffnete Manager-Karten gemeldet. Jede Karte lädt anschließend ihren individuell gefilterten Stand. Der Server sendet im Abo nur eine leere Änderungsmeldung, keine gemeinsamen Aufgabenlisten. Die Benutzerprüfung bleibt im normalen Datenabruf und bei jeder Änderung serverseitig aktiv.
+
+Die Verbindung nutzt den HA-WebSocket. Ein neues Abo sendet sofort ein Aktualisierungssignal, auch nach automatischem Wiederverbinden. Beim Entfernen einer Karte oder Benutzerwechsel wird das Abo beendet. Während eines Bearbeitungsdialogs werden dessen Eingaben erhalten und die Datenrevision aktualisiert; das Formular wird nicht durch Live-Updates ersetzt. Konkurrierende Änderungen am selben Termin können weiterhin einen erneuten Abruf erfordern. Die automatische Aktualisierung alle 15 Sekunden bleibt als Rückfallebene erhalten, etwa bei fehlender Abo-Freigabe. Hintergrund-Apps können durch das Betriebssystem pausiert werden; nach Rückkehr/Verbindungsaufbau wird nachgeladen.
+
+**Access Control:** In den betroffenen Rollen unter Advanced → Always allow zusätzlich diese Zeile ergänzen:
+
+```text
+hausarbeiten_manager/subscribe
+```
+
+Bei einer Freigabe von `hausarbeiten_manager/*` ist keine weitere Befehlsfreigabe nötig. Vorhandene Entitätsrechte (z. B. Lesezugriff auf die eigene person-Entität für Abhaken) und die übrigen Befehlsfreigaben bleiben erforderlich.
+
+Das Einstellungssymbol ist jetzt wie in der Spülmaschinen-App das ausgefüllte Zahnrad `mdi:cog`. Es bleibt ausschließlich Vera/Manuel sichtbar.
+
+49 Python-Tests und beide Frontend-DOM-Prüfungen erfolgreich: Echtzeitmeldung beim Abhaken/Wiederöffnen, zwei Clients, individuelle Daten, Speicherfehler, Tageswechsel, erhaltene Formulare, Aktualisierungen während laufender Abrufe, Abo-Abmeldung und Rückfallebene. Ein Live-Test in einer laufenden HA-Instanz steht aus. Update im Marketplace installieren, HA neu starten und Dashboard/App neu laden. Das Dashboard-YAML bleibt gültig.

@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.2.4
+
+- Live-Sync für geöffnete Hausarbeiten-Karten: Änderungen lösen sofort einen individuell berechtigten Abruf aus.
+- Neuer WebSocket-Befehl hausarbeiten_manager/subscribe. Es werden keine Aufgaben-/Benutzerdaten gemeinsam ausgesendet.
+- Sofortiger Abruf beim Verbindungsaufbau/Wiederverbinden; Abos werden beim Entfernen oder Benutzerwechsel beendet.
+- Geöffnete Formulare bleiben erhalten, Revisionen werden aktualisiert. Ältere Antworten überschreiben keine neueren Daten.
+- Bestehender 15-Sekunden-Abruf als Rückfallebene bleibt aktiv.
+- Einstellungssymbol wie bei Spülmaschine: mdi:cog.
+- 49 Python-Tests und beide Frontend-Prüfungen erfolgreich.
+
 ## 0.2.3
 
 - Tabzeile Nächste 7 Tage entfernt; die Sieben-Tage-Ansicht bleibt bestehen.
