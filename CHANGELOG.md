@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.2.2
+
+- Neue Option Abwechselnd für wiederkehrende Aufgaben, mit wählbarem Startkind Paul/Maximilian.
+- Genau ein Kind je fälligem Termin; Wechsel nach geplantem Termin, unabhängig vom Abhaken oder Wiederöffnen.
+- Funktioniert mit Tagen, Wochen, Monaten und Jahren. Bei mehreren Wochentagen wechselt der Dienst pro Termin.
+- Urlaubsmodus verändert den festen Terminrhythmus nicht. Nicht existierende Kalenderdaten zählen nicht als Termin.
+- Zuständigkeit wird beim Abhaken und Wiederöffnen serverseitig geprüft.
+- Bisherige Aufgaben und die Zuordnung an beide Kinder bleiben unverändert, solange Abwechselnd nicht eingeschaltet wird.
+- 45 Logiktests und Frontend-Prüfungen erfolgreich.
+
 ## 0.2.1
 
 - Abgehakte Hausarbeiten bleiben durchgestrichen bis einschließlich ihres Fälligkeitstags sichtbar.

@@ -1,5 +1,5 @@
-/* Hausarbeiten Manager 0.2.1 — no external frontend dependencies. */
-const HM_VERSION='0.2.1';
+/* Hausarbeiten Manager 0.2.2 — no external frontend dependencies. */
+const HM_VERSION='0.2.2';
 const hmEsc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hmDays=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const hmLabel=t=>{
@@ -45,7 +45,7 @@ class HausarbeitenManagerCard extends HTMLElement{
  }out+='</details>';
  }return out||'<div class="empty">Keine offenen Hausarbeiten in den nächsten 7 Tagen.</div>';
  }
- tasks(){const tasks=this._data.tasks;return tasks.length?tasks.map(task=>`<div class="row"><div class="main"><strong>${hmEsc(task.title)}</strong><small>${hmEsc(task.assignees.join(' · '))} · ${hmEsc(hmLabel(task))}</small><small>Ab ${hmEsc(this.dayTitle(task.start))}${task.end?' · bis '+hmEsc(this.dayTitle(task.end)):''}</small></div>${task.editable?`<button class="icon" data-edit="${hmEsc(task.id)}" aria-label="${hmEsc(task.title+' bearbeiten')}"><ha-icon icon="mdi:pencil-outline"></ha-icon></button><button class="icon danger" data-delete="${hmEsc(task.id)}" aria-label="${hmEsc(task.title+' löschen')}"><ha-icon icon="mdi:delete-outline"></ha-icon></button>`:''}</div>`).join(''):'<div class="empty">Noch keine Hausarbeiten angelegt.</div>';}
+ tasks(){const tasks=this._data.tasks;return tasks.length?tasks.map(task=>`<div class="row"><div class="main"><strong>${hmEsc(task.title)}</strong><small>${hmEsc(task.assignees.join(' · '))}${task.alternating?' · Abwechselnd (Start: '+hmEsc(task.first_person)+')':''} · ${hmEsc(hmLabel(task))}</small><small>Ab ${hmEsc(this.dayTitle(task.start))}${task.end?' · bis '+hmEsc(this.dayTitle(task.end)):''}</small></div>${task.editable?`<button class="icon" data-edit="${hmEsc(task.id)}" aria-label="${hmEsc(task.title+' bearbeiten')}"><ha-icon icon="mdi:pencil-outline"></ha-icon></button><button class="icon danger" data-delete="${hmEsc(task.id)}" aria-label="${hmEsc(task.title+' löschen')}"><ha-icon icon="mdi:delete-outline"></ha-icon></button>`:''}</div>`).join(''):'<div class="empty">Noch keine Hausarbeiten angelegt.</div>';}
  settings(){
   if(!this._data.settings_allowed)return '';
   return `<div class="settings-row"><strong>Urlaubsmodus</strong><input class="vacation-switch" type="checkbox" role="switch" aria-label="Urlaubsmodus" data-vacation ${this._data.vacation_active?'checked':''}></div><div class="toolbar"><button class="add" data-add>+ Hausarbeit</button></div><strong>Hausarbeiten</strong>${this.tasks()}`;
@@ -79,7 +79,7 @@ class HausarbeitenManagerCard extends HTMLElement{
  const dialog=this.dialog(task?'Hausarbeit bearbeiten':'Hausarbeit anlegen',`
  <label class="field"><span>Hausarbeit</span><input name="title" required maxlength="150" value="${hmEsc(value.title)}" placeholder="Zum Beispiel: Zimmer aufräumen"></label>
  <label class="field"><span>Beschreibung (optional)</span><textarea name="description" maxlength="2000">${hmEsc(value.description)}</textarea></label>
- ${this._data.parent?`<div class="field"><span>Für wen?</span><div class="choices">${['Maximilian','Paul'].map(p=>`<label><input type="checkbox" name="assignee" value="${p}" ${value.assignees.includes(p)?'checked':''}>${p}</label>`).join('')}</div></div>`:`<p class="smallnote">Für ${hmEsc(this._data.person)} · eigene Hausarbeit</p>`}
+ ${this._data.parent?`<div class="field"><span>Für wen?</span><div class="choices">${['Maximilian','Paul'].map(p=>`<label><input type="checkbox" name="assignee" value="${p}" ${value.assignees.includes(p)?'checked':''}>${p}</label>`).join('')}</div></div><div class="field"><label class="repeat-toggle"><input type="checkbox" name="alternating" ${value.alternating?'checked':''}>Abwechselnd</label><label class="field first-person"><span>Wer beginnt?</span><select name="first_person">${['Paul','Maximilian'].map(p=>`<option value="${p}" ${(value.first_person||'Paul')===p?'selected':''}>${p}</option>`).join('')}</select></label></div>`:`<p class="smallnote">Für ${hmEsc(this._data.person)} · eigene Hausarbeit</p>`}
  <label class="field"><span>Startdatum</span><input type="date" name="start" required value="${hmEsc(value.start)}"></label>
  <div class="recurrence" ${this._data.parent?'':'hidden'}>
  <label class="repeat-toggle"><input type="checkbox" name="repeating" ${value.kind!=='once'?'checked':''}><ha-icon icon="mdi:repeat"></ha-icon>Wiederkehrend</label>
@@ -100,10 +100,20 @@ class HausarbeitenManagerCard extends HTMLElement{
    const weekdays=[...form.querySelectorAll('[name="weekday"]')].filter(el=>el.checked).map(el=>Number(el.value));
    const start=input('start').value;
    const result={title:input('title').value,description:input('description').value,start,end:repeating?input('end').value:'',kind,interval:repeating?Number(input('interval').value):1,weekdays:weekdays.length?weekdays:['weekly','monthly_nth'].includes(kind)?[]:[(new Date(start+'T12:00:00').getDay()+6)%7],nth:Number(input('nth').value),assignees:this._data.parent?[...form.querySelectorAll('[name="assignee"]')].filter(el=>el.checked).map(el=>el.value):[this._data.person]};
+   result.alternating=Boolean(this._data.parent&&input('alternating')?.checked);
+   result.first_person=result.alternating?input('first_person').value:'Paul';
+   if(result.alternating)result.assignees=['Maximilian','Paul'];
    if(value.id)result.id=value.id;
    return result;
  };
- const update=()=>{
+ const update=event=>{
+   if(this._data.parent){
+     if(event?.target===input('repeating')&&!input('repeating').checked)input('alternating').checked=false;
+     const alternate=input('alternating').checked;
+     if(alternate)input('repeating').checked=true;
+     dialog.querySelector('.first-person').hidden=!alternate;
+     form.querySelectorAll('[name="assignee"]').forEach(el=>{el.disabled=alternate;if(alternate)el.checked=true;});
+   }
    const task=readTask();const repeated=task.kind!=='once';
    dialog.querySelector('.recurrence-controls').hidden=!repeated;
    input('interval').disabled=!repeated;
@@ -113,6 +123,7 @@ class HausarbeitenManagerCard extends HTMLElement{
    dialog.querySelector('.nth').hidden=task.kind!=='monthly_nth';
    if(!task.start||!Number.isFinite(new Date(task.start+'T12:00:00').getTime())){dialog.querySelector('.recurrence-hint').textContent='Bitte ein Startdatum auswählen.';return;}
    let note=repeated&&task.weekdays.length?hmLabel(task):'Bitte mindestens einen Wochentag auswählen.';
+   if(task.alternating)note+=' · Abwechselnd, Beginn: '+task.first_person;
    if(task.kind==='monthly_date'&&Number(task.start.slice(8))>28)note+=' · Monate ohne diesen Tag werden übersprungen.';
    if(task.kind==='yearly'&&task.start.slice(5)==='02-29')note+=' · Jahre ohne den 29. Februar werden übersprungen.';
    dialog.querySelector('.recurrence-hint').textContent=note;

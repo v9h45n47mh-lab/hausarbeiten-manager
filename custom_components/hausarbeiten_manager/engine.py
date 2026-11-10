@@ -69,8 +69,17 @@ def validate_task(raw, actor, old=None):
     nth = int(raw.get('nth', 1))
     if nth not in (1, 2, 3, 4, 5, -1):
         raise ValueError('Ungültige Position im Monat.')
+    alternating = raw.get('alternating', False)
+    if type(alternating) is not bool:
+        raise ValueError('Abwechselnd muss ein Wahrheitswert sein.')
+    if alternating and not actor['parent']:
+        raise PermissionError('Kinder können keine abwechselnden Aufgaben anlegen.')
+    first_person = raw.get('first_person', 'Paul')
+    if alternating and (kind == 'once' or len(assignees) != 2 or first_person not in assignees):
+        raise ValueError('Abwechselnd benötigt eine Wiederholung, beide Kinder und ein gültiges Startkind.')
     return {'id': old['id'] if old else uuid4().hex, 'title': title, 'description': description,
             'assignees': assignees, 'start': start.isoformat(), 'end': end.isoformat() if end else '',
+            'alternating': alternating, 'first_person': first_person if alternating else 'Paul',
             'kind': kind, 'interval': interval, 'weekdays': sorted(set(weekdays)), 'nth': nth,
             'created_by': old['created_by'] if old else actor['user_id']}
 
@@ -99,6 +108,60 @@ def occurs(task, day):
     return (day.day-1)//7+1 == task['nth']
 
 
+def occurrence_index(task, day):
+    """Count scheduled occurrences before day, including vacation dates.
+
+    Alternation follows the schedule, never the completion order. Missing
+    calendar dates do not count. Call only for an actual occurrence.
+    """
+    start = iso_date(task['start'])
+    interval = task['interval']
+    if task['kind'] == 'once':
+        return 0
+    if task['kind'] == 'daily':
+        return (day-start).days // interval
+    if task['kind'] == 'weekly':
+        anchor = start-timedelta(days=start.weekday())
+        weeks, weekday = divmod((day-anchor).days, 7)
+        count = ((weeks+interval-1)//interval)*len(task['weekdays'])
+        if weeks % interval == 0:
+            count += sum(w < weekday for w in task['weekdays'])
+        return count-sum(w < start.weekday() for w in task['weekdays'])
+    if task['kind'] == 'yearly':
+        count = 0
+        for year in range(start.year, day.year+1, interval):
+            if start.day <= monthrange(year, start.month)[1] and date(year,start.month,start.day) < day:
+                count += 1
+        return count
+    months = (day.year-start.year)*12+day.month-start.month
+    count = 0
+    for offset in range(0, months+1, interval):
+        year, month0 = divmod(start.year*12+start.month-1+offset,12)
+        month = month0+1
+        first_weekday, last_day = monthrange(year,month)
+        if task['kind'] == 'monthly_date':
+            candidates = [start.day] if start.day <= last_day else []
+        else:
+            candidates = []
+            for weekday in task['weekdays']:
+                if task['nth'] == -1:
+                    candidate = last_day-((first_weekday+last_day-1-weekday)%7)
+                else:
+                    candidate = 1+(weekday-first_weekday)%7+7*(task['nth']-1)
+                if candidate <= last_day:
+                    candidates.append(candidate)
+        count += sum(start <= date(year,month,d) < day for d in candidates)
+    return count
+
+
+def assigned_people(task, day):
+    if not task.get('alternating', False):
+        return task['assignees']
+    first = task.get('first_person', 'Paul')
+    other = next(p for p in CHILDREN if p != first)
+    return [first if occurrence_index(task,day) % 2 == 0 else other]
+
+
 def vacation_on(data, day):
     if data.get('vacation_enabled') and day >= iso_date(data['vacation_started']):
         return True
@@ -121,7 +184,9 @@ def occurrences(data, people, start, end, include_done=False):
         last = min(end, iso_date(task['end'])) if task.get('end') else end
         while day <= last:
             if occurs(task, day):
-                for person in assigned:
+                for person in assigned_people(task, day):
+                    if person not in assigned:
+                        continue
                     ident = key_for(task['id'], person, day)
                     done = ident in data['done']
                     if (done and include_done) or (not done and not vacation_on(data, day)):
@@ -164,6 +229,8 @@ def completion_key(data, task_id, person, day_text, actor, today, reopening=Fals
     task = next((t for t in data['tasks'] if t['id'] == task_id), None)
     if not task or person not in task['assignees'] or not occurs(task, day) or (not reopening and vacation_on(data, day)):
         raise ValueError('Dieser Termin ist nicht mehr offen.')
+    if person not in assigned_people(task, day):
+        raise PermissionError('Für diesen Termin ist das andere Kind zuständig.')
     return key_for(task_id, person, day)
 
 

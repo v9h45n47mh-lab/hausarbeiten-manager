@@ -1,6 +1,6 @@
 import importlib.util
 import json
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 import unittest
 
@@ -276,6 +276,67 @@ class EngineTests(unittest.TestCase):
         self.assertTrue(rows[0]['completed'])
         data=e.reopen(data,ident,'Paul','2026-11-09',PAUL,TODAY)
         self.assertEqual(e.occurrences(data,['Paul'],TODAY,TODAY,include_done=True),[])
+
+    def test_weekly_alternates_with_selected_start_child(self):
+        data=e.save_task(e.empty_data(),raw(kind='weekly',weekdays=[0],alternating=True,first_person='Paul'),PARENT)
+        rows=e.occurrences(data,list(e.CHILDREN),TODAY,date(2026,11,30),include_done=True)
+        self.assertEqual([(r['date'],r['person']) for r in rows],[('2026-11-09','Paul'),('2026-11-16','Maximilian'),('2026-11-23','Paul'),('2026-11-30','Maximilian')])
+        task=data['tasks'][0]
+        self.assertEqual(e.assigned_people({**task,'first_person':'Maximilian'},TODAY),['Maximilian'])
+
+    def test_alternation_does_not_depend_on_completion_or_query_range(self):
+        data=e.save_task(e.empty_data(),raw(kind='weekly',weekdays=[0],alternating=True,first_person='Paul'),PARENT)
+        ident=data['tasks'][0]['id']
+        # Querying only the second week must not reset the start child.
+        rows=e.occurrences(data,['Maximilian'],date(2026,11,16),date(2026,11,16))
+        self.assertEqual(len(rows),1)
+        done=e.complete(data,ident,'Paul','2026-11-09',PAUL,TODAY)
+        undone=e.reopen(done,ident,'Paul','2026-11-09',PAUL,TODAY)
+        for state in [data,done,undone]:
+            self.assertEqual(e.assigned_people(state['tasks'][0],date(2026,11,16)),['Maximilian'])
+
+    def test_other_child_cannot_complete_or_reopen_alternating_occurrence(self):
+        data=e.save_task(e.empty_data(),raw(kind='daily',alternating=True,first_person='Paul'),PARENT)
+        ident=data['tasks'][0]['id']
+        for action in [e.complete,e.reopen]:
+            with self.assertRaises(PermissionError):action(data,ident,'Maximilian','2026-11-09',MAX,TODAY)
+        self.assertEqual(e.occurrences(data,['Maximilian'],TODAY,TODAY,True),[])
+
+    def test_invalid_alternation_and_child_configuration_rejected(self):
+        for change in [{'kind':'once'},{'assignees':['Paul']},{'first_person':'Vera'},{'alternating':'yes'}]:
+            with self.assertRaises(ValueError):e.validate_task(raw(**({'kind':'weekly','alternating':True}|change)),PARENT)
+        with self.assertRaises(PermissionError):
+            e.validate_task(raw(assignees=['Paul'],alternating=True),PAUL)
+
+    def test_vacation_does_not_shift_calendar_alternation(self):
+        data=e.save_task(e.empty_data(),raw(kind='weekly',weekdays=[0],alternating=True,first_person='Paul'),PARENT)
+        data=e.save_vacation(data,True,PARENT,TODAY)
+        data=e.save_vacation(data,False,PARENT,date(2026,11,15))
+        rows=e.occurrences(data,list(e.CHILDREN),TODAY,date(2026,11,16))
+        self.assertEqual([(r['date'],r['person']) for r in rows],[('2026-11-16','Maximilian')])
+
+    def test_alternation_indices_match_all_actual_recurrences(self):
+        cases=[{'kind':'daily','interval':3},
+               {'kind':'weekly','interval':2,'weekdays':[0,2,5]},
+               {'kind':'monthly_date','start':'2024-01-31','interval':2},
+               {'kind':'monthly_nth','weekdays':[0,5],'nth':2},
+               {'kind':'monthly_nth','weekdays':[1,6],'nth':-1,'interval':2},
+               {'kind':'monthly_nth','weekdays':[5],'nth':5},
+               {'kind':'yearly','start':'2024-02-29'}]
+        for spec in cases:
+            task=self.task(**({'start':'2024-01-17','alternating':True,'first_person':'Paul'}|spec))
+            day=e.iso_date(task['start']);index=0
+            while day<=date(2032,3,31):
+                if e.occurs(task,day):
+                    self.assertEqual(e.occurrence_index(task,day),index,(spec,day))
+                    self.assertEqual(e.assigned_people(task,day),['Paul' if index%2==0 else 'Maximilian'])
+                    index+=1
+                day+=timedelta(days=1)
+
+    def test_legacy_tasks_still_assign_both_children(self):
+        task=self.task(kind='weekly',weekdays=[0])
+        task.pop('alternating');task.pop('first_person')
+        self.assertEqual(e.assigned_people(task,TODAY),['Maximilian','Paul'])
 
 
 if __name__=='__main__':unittest.main()

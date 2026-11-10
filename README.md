@@ -142,3 +142,15 @@ Bei zusammengefassten Elternzeilen wird jedes fertige Kind einzeln markiert. Der
 Der neue WebSocket-Befehl heißt `hausarbeiten_manager/reopen`. Die bestehende Access-Control-Freigabe `hausarbeiten_manager/*` deckt ihn ab; bei expliziter Befehlsliste ergänzen. Benutzerprüfung, Revision und Speicherung erfolgen serverseitig wie beim Abhaken.
 
 38 Logiktests und Frontend-DOM-Prüfungen erfolgreich: frühzeitiges Erledigen, Fälligkeitstag/Folgetag, Wiederöffnen, getrennte Kinder/Termine, Berechtigungen, Elternansicht und Zähler. Ein Live-Test in HA steht aus. Update im Marketplace installieren, HA neu starten und Dashboard/App neu laden. Dashboard-YAML und Benutzerzuordnung bleiben gültig.
+
+## Abwechselnde Aufgaben ab 0.2.2
+
+In der Elternverwaltung gibt es bei der Aufgabenanlage die Option **Abwechselnd** und die Auswahl **Wer beginnt?** (Paul oder Maximilian). Einschalten wählt beide Kinder und aktiviert Wiederkehrend. Danach wie gewohnt den Rhythmus festlegen, z. B. alle 1 Woche am Samstag. Wiederkehrend ausschalten deaktiviert auch Abwechselnd.
+
+Beispiel mit Startkind Paul: erster fälliger Samstag Paul, zweiter Maximilian, dritter Paul. Nur das zuständige Kind sieht diesen Termin in seiner Ansicht und darf ihn abhaken oder wieder öffnen. Eltern sehen die jeweilige Zuordnung. Die übrigen Rechte bleiben gültig; Kinder können selbst keine abwechselnden Serien anlegen.
+
+Der Wechsel richtet sich nach den **geplanten Terminen**, unabhängig davon, wann oder ob abgehakt wird. Bei mehreren ausgewählten Wochentagen wechselt die Zuständigkeit bei jedem einzelnen Termin. Ausgesetzte Urlaubstermine lassen den Kalender-Rhythmus unverändert weiterlaufen; Monate ohne gewählten Kalendertag bzw. Jahre ohne den 29. Februar enthalten dagegen keinen Termin und lösen keinen Wechsel aus.
+
+Vorhandene Aufgaben werden nicht automatisch umgestellt. Erst die ausdrücklich aktivierte Option ändert die Zuordnung einer Serie; eine spätere Änderung an Startdatum, Wiederholung oder Startkind berechnet deren Zuständigkeit neu. Erledigungen bleiben mit ihrer bisherigen Termin-/Personenkennung gespeichert.
+
+45 Logiktests und Frontend-DOM-Prüfungen erfolgreich, darunter Startkind, Wochenwechsel, alle Wiederholungsmuster, Monatslücken, Schaltjahre, Urlaub, berechtigte Erledigung/Wiederöffnung und unveränderte Altaufgaben. Ein Live-Test in HA steht aus. Marketplace-Update installieren, HA neu starten und Dashboard/App neu laden. Dashboard-YAML bleibt gültig.
