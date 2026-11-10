@@ -109,8 +109,24 @@ Versionsnummer nur in Einstellungen; kein Benutzername im Kartenkopf. Urlaubsmod
 
 Nur Maximilian und Paul können jeweils eigene Termine abhaken. Vera und Manuel sehen die Zuordnung und verwalten Aufgaben, können aber keine Erledigungen vornehmen. Das wird im Backend geprüft.
 
-## Neu in 0.1.4
+## Logo ab 0.2.0
 
 Eigenes Logo für Home Assistant und Marketplace: Aufgabenliste mit Häkchen und Besen, farblich passend zur Spülmaschinen-App. Die Markenbilder liegen als `brand/icon.png` (256 × 256) und `brand/icon@2x.png` (512 × 512) innerhalb der Integration. Die funktionale Logik ist unverändert.
 
 Update im Marketplace installieren, Home Assistant neu starten und Dashboard/Companion-App neu laden. Das Dashboard-YAML bleibt gültig. Die tatsächliche Logoanzeige in deinem Marketplace bleibt vor Ort zu prüfen; zwischengespeicherte Bilder können verzögert aktualisiert werden.
+
+## Wiederholung ab 0.2.0
+
+Die Aufgabenanlage bietet ein Startdatum und den Schalter **Wiederkehrend**. Nach dem Einschalten erscheint **Wiederholen alle** mit einer Zahl von 1 bis 365 und der Einheit **Tag, Woche, Monat oder Jahr**. Es gibt keine Uhrzeiten und kein Ganztägig-Feld.
+
+- Tag: alle X Tage ab dem Startdatum.
+- Woche: alle X Wochen, mit einzeln anwählbaren Wochentagen M/D/M/D/F/S/S. Die Startwoche ist der Anker, Termine vor dem Startdatum entfallen.
+- Monat: alle X Monate, entweder am Kalendertag des Startdatums oder an ausgewählten Wochentagen mit Erster/Zweiter/Dritter/Vierter/Fünfter/Letzter (z. B. jeden zweiten Samstag im Monat).
+- Jahr: alle X Jahre am Tag und Monat des Startdatums.
+- **Bis (optional)** begrenzt die Serie einschließlich des gewählten Datums; leer bedeutet ohne Enddatum. Ohne Wiederkehrend wird nur das Startdatum verwendet.
+
+Kalendertage, die nicht existieren, werden übersprungen: Eine monatliche Aufgabe am 31. fällt z. B. im Februar aus; der jährliche 29. Februar erscheint nur in passenden Schaltjahren. Die Vorschau im Editor weist darauf hin.
+
+Bestehende Serien und Erledigungen bleiben erhalten. Beim Bearbeiten einer bisherigen monatlichen Wochentagsregel wird deren Muster im neuen Editor vorbelegt. Kinder sehen weiterhin nur die Anlage einmaliger eigener Arbeiten; Wiederholungsregeln können nur über die Elternverwaltung angelegt werden.
+
+33 Logiktests und Frontend-DOM-Prüfungen erfolgreich, einschließlich Monats-/Jahresabstand, Schaltjahren, alten Serien, Editor-Eingaben und Kinderrechten. Ein visueller Test im laufenden HA steht aus. Marketplace-Update installieren, HA neu starten und Dashboard/App neu laden. Das Dashboard-YAML bleibt gültig.

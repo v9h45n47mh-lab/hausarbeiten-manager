@@ -1,10 +1,14 @@
 # Änderungen
 
-## 0.1.4
+## 0.2.0
 
-- Eigenes Logo für Home Assistant und Marketplace in 256 und 512 Pixeln.
-- Aufgabenliste mit Häkchen und Besen, passend zur Spülmaschinen-App.
-- Keine funktionalen Änderungen.
+- Neuer Wiederholungseditor nach Kalendermuster: Wiederkehrend, Wiederholen alle X Tag/Woche/Monat/Jahr, auswählbare Wochentage und optionales Bis-Datum.
+- Monatlich am Tag des Startdatums oder an einem bestimmten Wochentag (z. B. zweiter/letzter Samstag); jährliche Wiederholungen ergänzt.
+- Keine Felder für Uhrzeiten oder Ganztägig.
+- Bestehende tägliche, wöchentliche und monatliche Aufgabenserien bleiben kompatibel; Erledigungen behalten ihre Serien-ID.
+- Neues Marketplace-Logo mit Aufgabenliste und Besen in 256/512 Pixeln.
+- Kinder können weiterhin nur einmalige eigene Arbeiten anlegen und nur ihre eigenen Aufgaben abhaken.
+- 33 Logiktests und Frontend-Prüfungen erfolgreich.
 
 ## 0.1.3
 

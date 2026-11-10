@@ -6,7 +6,7 @@ from uuid import uuid4
 
 CHILDREN = ('Maximilian', 'Paul')
 ADULTS = ('Vera', 'Manuel')
-KINDS = ('once', 'daily', 'weekly', 'monthly_nth')
+KINDS = ('once', 'daily', 'weekly', 'monthly_date', 'monthly_nth', 'yearly')
 
 
 def empty_data():
@@ -87,7 +87,11 @@ def occurs(task, day):
     if kind == 'weekly':
         anchor = start-timedelta(days=start.weekday())
         return ((day-anchor).days//7) % task['interval'] == 0 and day.weekday() in task['weekdays']
+    if kind == 'yearly':
+        return (day.year-start.year) % task['interval'] == 0 and (day.month, day.day) == (start.month, start.day)
     months = (day.year-start.year)*12 + day.month-start.month
+    if kind == 'monthly_date':
+        return months % task['interval'] == 0 and day.day == start.day
     if months % task['interval'] or day.weekday() not in task['weekdays']:
         return False
     if task['nth'] == -1:

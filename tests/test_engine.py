@@ -59,7 +59,7 @@ class EngineTests(unittest.TestCase):
         self.assertFalse(e.occurs(task,date(2026,11,11)))
 
     def test_children_cannot_create_repeating_tasks(self):
-        for kind in ['daily','weekly','monthly_nth']:
+        for kind in ['daily','weekly','monthly_date','monthly_nth','yearly']:
             with self.assertRaises(PermissionError):
                 e.validate_task(raw(assignees=['Paul'],kind=kind),PAUL)
 
@@ -182,6 +182,51 @@ class EngineTests(unittest.TestCase):
     def test_bad_inputs_rejected(self):
         for changes in [{'title':''},{'interval':0},{'weekdays':[8]},{'end':'2026-11-01'},{'kind':'magic'}]:
             with self.assertRaises((ValueError,TypeError)):self.task(**changes)
+
+    def test_monthly_calendar_day_skips_missing_dates(self):
+        task=self.task(kind='monthly_date',start='2026-01-31')
+        self.assertTrue(e.occurs(task,date(2026,1,31)))
+        self.assertFalse(e.occurs(task,date(2026,2,28)))
+        self.assertTrue(e.occurs(task,date(2026,3,31)))
+        self.assertFalse(e.occurs(task,date(2026,4,30)))
+
+    def test_month_interval_is_anchored_to_start_month_across_years(self):
+        task=self.task(kind='monthly_date',start='2026-11-10',interval=2)
+        self.assertFalse(e.occurs(task,date(2026,12,10)))
+        self.assertTrue(e.occurs(task,date(2027,1,10)))
+        self.assertFalse(e.occurs(task,date(2027,1,11)))
+
+    def test_yearly_interval_keeps_calendar_date(self):
+        task=self.task(kind='yearly',start='2026-11-10',interval=2)
+        self.assertFalse(e.occurs(task,date(2027,11,10)))
+        self.assertTrue(e.occurs(task,date(2028,11,10)))
+        self.assertFalse(e.occurs(task,date(2028,11,11)))
+        self.assertFalse(e.occurs(task,date(2024,11,10)))
+
+    def test_yearly_leap_day_skips_nonleap_year(self):
+        task=self.task(kind='yearly',start='2024-02-29')
+        self.assertFalse(e.occurs(task,date(2025,2,28)))
+        self.assertFalse(e.occurs(task,date(2025,3,1)))
+        self.assertTrue(e.occurs(task,date(2028,2,29)))
+
+    def test_new_recurrences_respect_end_and_completion(self):
+        for kind in ['monthly_date','yearly']:
+            data=e.save_task(e.empty_data(),raw(kind=kind,end='2026-11-09'),PARENT)
+            task=data['tasks'][0]
+            self.assertTrue(e.occurs(task,TODAY))
+            self.assertFalse(e.occurs(task,date(2027,11,9)))
+            done=e.complete(data,task['id'],'Paul','2026-11-09',PAUL,TODAY)
+            self.assertEqual(e.occurrences(done,['Paul'],TODAY,TODAY),[])
+
+    def test_legacy_monthly_task_roundtrip_keeps_identity_and_rhythm(self):
+        data=e.save_task(e.empty_data(),raw(kind='monthly_nth',start='2026-01-01',weekdays=[1,5],nth=2,interval=2),PARENT)
+        task=data['tasks'][0]
+        updated=e.save_task(data,{**task,'title':'Neuer Titel'},PARENT)['tasks'][0]
+        self.assertEqual(task['id'],updated['id'])
+        for month in range(1,13):
+            for day in range(1,29):
+                stamp=date(2026,month,day)
+                self.assertEqual(e.occurs(task,stamp),e.occurs(updated,stamp))
 
 
 if __name__=='__main__':unittest.main()
