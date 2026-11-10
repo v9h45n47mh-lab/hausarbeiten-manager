@@ -1,9 +1,19 @@
 # Validierung der UI-Kit-Umstellung
 
-- HA UI Kit 1.2.1 lokal mitgeliefert. Lock-Datei, JS, CSS und Lizenz per SHA-256 geprüft.
-- Gemeinsame responsive Regeln bis 600 px, mobile einspaltige Formulare, HA-Theme-Variablen, Schrift, Touchflächen, umbrechende Namen und Dialoghöhe strukturell geprüft.
-- Das vollständige Frontendverzeichnis wird am bisherigen URL-Präfix ausgeliefert. Relative ES-Modulimporte funktionieren ohne CDN oder zusätzliche HA-Integration.
-- Bestehende Backend- und DOM-Funktionstests inklusive Rollen-/Eingabeprüfungen ausgeführt. Testadapter laden das tatsächliche Kit und die tatsächliche Karte.
-- Einschränkung: Die visuelle Desktop-/Mobilprüfung konnte in dieser Umgebung nicht ausgeführt werden. Chromium startet wegen einer gesperrten Betriebssystemfunktion nicht; der Cloud-Browser erlaubt keine lokalen Dateivorschauen. Die Prüfung der Layoutregeln ersetzt keine Sichtprüfung in HA. Kein Test an einer laufenden HA-Instanz.
+Stand: 2026-11-10. HA UI Kit 1.2.1, unverändert lokal eingebunden und per SHA-256 einschließlich Lizenz geprüft. Karten verwenden ausschließlich UI_CSS; keine lokalen visuellen CSS-Überschreibungen oder SVG-Kopien.
 
-Nach Installation: HA neu starten, Dashboard/App neu laden; Desktop und iPhone mit Vera/Manuel sowie dem jeweiligen Kinderkonto prüfen. Bestehende Daten, Karten-YAML und Freigaben bleiben gültig.
+## Desktop, Mobil und Themes
+
+- Erfolgreiche Chromium-Prüfung mit tatsächlichem Produktionsmodul und UI-Kit-Referenz: 1100, 430, 390, 375 und 320 px, jeweils hell und dunkel.
+- Exakter Vergleich von Zahnradgeometrie, Schrift, Farbe und Inhaltsabständen mit der Referenz. Keine überlaufenden Seiten oder Zeilen. Gemeinsame Dialoge einschließlich mobiler Höhe, Schließen per Escape und Primärbutton geprüft.
+- Desktop- und Mobil-Screenshots beider Themes zusätzlich gesichtet. Screenshots aller Kombinationen liegen im Workflow-Artefakt ui-browser-evidence.
+- [Erfolgreicher Browserlauf](https://github.com/v9h45n47mh-lab/hausarbeiten-manager/actions/runs/42870191467). Testfixture bildet HA-Benutzer, Zustände und WebSocket-Antworten nach; kein Test an einer laufenden HA-Instanz.
+
+## Funktionen und Berechtigungen
+
+- 53 Backendtests sowie DOM-Tests bestanden. Berechtigungs- und Datenlogik unverändert; kein zusätzliches Access-Control-Recht erforderlich.
+- Zwei Clients: Erledigen und Wiederöffnen synchronisiert, geöffnete Formulare erhalten, Subscription-Cleanup und Fallback geprüft. Eltern können Aufgaben verwalten, nur Kinder ihre eigenen Aufgaben abhaken. Eigene einmalige Aufgaben, abwechselnde Wiederholungen und Löschdialog geprüft.
+
+## Installation
+
+In HACS aktualisieren, Home Assistant neu starten und Dashboard/App neu laden. Bestehende Daten, Karten-YAML und Freigaben bleiben gültig. Der gesamte Frontendordner wird am bisherigen URL-Präfix ausgeliefert; kein CDN und keine weitere HA-Integration erforderlich.
