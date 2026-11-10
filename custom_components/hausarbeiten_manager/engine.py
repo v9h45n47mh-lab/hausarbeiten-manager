@@ -109,7 +109,7 @@ def key_for(task_id, person, day):
     return f'{task_id}|{person}|{day.isoformat()}'
 
 
-def occurrences(data, people, start, end):
+def occurrences(data, people, start, end, include_done=False):
     if end < start or (end-start).days > 366:
         raise ValueError('Maximal 366 Tage pro Abruf.')
     result = []
@@ -120,13 +120,14 @@ def occurrences(data, people, start, end):
         day = max(start, iso_date(task['start']))
         last = min(end, iso_date(task['end'])) if task.get('end') else end
         while day <= last:
-            if occurs(task, day) and not vacation_on(data, day):
+            if occurs(task, day):
                 for person in assigned:
                     ident = key_for(task['id'], person, day)
-                    if ident not in data['done']:
+                    done = ident in data['done']
+                    if (done and include_done) or (not done and not vacation_on(data, day)):
                         result.append({'id': ident, 'task_id': task['id'], 'person': person,
                                        'date': day.isoformat(), 'title': task['title'],
-                                       'description': task['description']})
+                                       'description': task['description'], 'completed': done})
             day += timedelta(days=1)
     return sorted(result, key=lambda r: (r['date'], r['person'], r['title'].casefold(), r['id']))
 
@@ -154,19 +155,30 @@ def delete_task(data, task_id, actor):
     return result
 
 
-def complete(data, task_id, person, day_text, actor, today):
+def completion_key(data, task_id, person, day_text, actor, today, reopening=False):
     if actor['person'] not in CHILDREN or person != actor['person']:
         raise PermissionError('Du kannst nur deine eigenen Hausarbeiten abhaken.')
     day = iso_date(day_text)
     if day > today+timedelta(days=6):
         raise ValueError('Dieser Termin liegt außerhalb der nächsten sieben Tage.')
     task = next((t for t in data['tasks'] if t['id'] == task_id), None)
-    if not task or person not in task['assignees'] or not occurs(task, day) or vacation_on(data, day):
+    if not task or person not in task['assignees'] or not occurs(task, day) or (not reopening and vacation_on(data, day)):
         raise ValueError('Dieser Termin ist nicht mehr offen.')
+    return key_for(task_id, person, day)
+
+
+def complete(data, task_id, person, day_text, actor, today):
+    ident = completion_key(data, task_id, person, day_text, actor, today)
     result = deepcopy(data)
-    ident = key_for(task_id, person, day)
     if ident not in result['done']:
         result['done'][ident] = {'at': datetime.now(timezone.utc).isoformat(), 'by': actor['user_id']}
+    return result
+
+
+def reopen(data, task_id, person, day_text, actor, today):
+    ident = completion_key(data, task_id, person, day_text, actor, today, reopening=True)
+    result = deepcopy(data)
+    result['done'].pop(ident, None)
     return result
 
 

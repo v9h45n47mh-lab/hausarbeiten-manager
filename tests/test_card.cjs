@@ -8,14 +8,31 @@ window.HTMLElement.prototype.close=function(){this.removeAttribute('open');this.
 const Card=window.customElements.get('hausarbeiten-manager-card');
 const row=(person,id)=>({id,task_id:id,person,date:'2026-11-09',title:'Zimmer',description:'<img src=x>'});
 const data={revision:0,today:'2026-11-09',person:'Vera',parent:true,settings_allowed:true,tasks:[],occurrences:[row('Paul','p'),row('Maximilian','m')],vacations:[],vacation_active:false};
-(async()=>{const card=new Card();card.setConfig({});card._data=data;card._user='v';const calls=[];card._hass={user:{id:'v'},callWS:async msg=>{calls.push(msg);return {...data,revision:1,occurrences:data.occurrences.filter(r=>r.person!==msg.person)}}};card.render();
+(async()=>{const card=new Card();card.setConfig({});card._data=data;card._user='v';const calls=[];card._hass={user:{id:'v'},callWS:async msg=>{calls.push(msg);return {...card._data,revision:card._data.revision+1,occurrences:card._data.occurrences.map(r=>r.task_id===msg.task_id&&r.person===msg.person?{...r,completed:msg.type.endsWith('/complete')}:r)}}};card.render();
 assert.equal(card.shadowRoot.querySelectorAll('.day').length,1);assert.equal(card.shadowRoot.querySelectorAll('.row').length,1);assert.equal(card.shadowRoot.querySelectorAll('[data-group]').length,0);assert.equal(card.shadowRoot.querySelectorAll('.assignee').length,2);
-assert.equal(card.shadowRoot.querySelectorAll('.identity').length,0);assert.doesNotMatch(card.shadowRoot.querySelector('.footer').textContent,/0\.2\.0/);
-card.shadowRoot.querySelector('[data-tab="settings"]').click();assert.equal(card.shadowRoot.querySelectorAll('[data-add]').length,1);assert.equal(card.shadowRoot.querySelectorAll('input[data-vacation][type="checkbox"]').length,1);assert.equal(card.shadowRoot.querySelectorAll('input[type="date"]').length,0);assert.match(card.shadowRoot.querySelector('.footer').textContent,/0\.2\.0/);
+assert.equal(card.shadowRoot.querySelectorAll('.identity').length,0);assert.doesNotMatch(card.shadowRoot.querySelector('.footer').textContent,/0\.2\.1/);
+card.shadowRoot.querySelector('[data-tab="settings"]').click();assert.equal(card.shadowRoot.querySelectorAll('[data-add]').length,1);assert.equal(card.shadowRoot.querySelectorAll('input[data-vacation][type="checkbox"]').length,1);assert.equal(card.shadowRoot.querySelectorAll('input[type="date"]').length,0);assert.match(card.shadowRoot.querySelector('.footer').textContent,/0\.2\.1/);
 card._data={...data,parent:false,settings_allowed:false,person:'Paul',occurrences:[row('Paul','p')]};card.render();assert.equal(card._tab,'calendar');assert.equal(card.shadowRoot.querySelectorAll('[data-tab="settings"],[data-vacation]').length,0);assert.match(card.shadowRoot.querySelector('[data-add]').textContent,/Einmalige Arbeit/);
 card.shadowRoot.querySelector('[data-group]').click();await new Promise(r=>setImmediate(r));assert.equal(calls[0].person,'Paul');
+assert.ok(card.shadowRoot.querySelector('.row.completed'));
+assert.equal(card.shadowRoot.querySelector('[data-group]').getAttribute('aria-pressed'),'true');
+assert.match(card.shadowRoot.querySelector('.pill').textContent,/0 offen/);
+card.shadowRoot.querySelector('[data-group]').click();await new Promise(r=>setImmediate(r));
+assert.equal(calls[1].type,'hausarbeiten_manager/reopen');
+assert.equal(card.shadowRoot.querySelector('.row.completed'),null);
+assert.equal(card.shadowRoot.querySelector('[data-group]').getAttribute('aria-pressed'),'false');
+assert.match(card.shadowRoot.querySelector('.pill').textContent,/1 offen/);
+
 card._closedDays.add('2026-11-09');card.render();assert.equal(card.shadowRoot.querySelector('.day').hasAttribute('open'),false);card._closedDays.clear();card.render();assert.equal(card.shadowRoot.querySelector('.day').hasAttribute('open'),true);
-card._data={...card._data,occurrences:[]};card.render();assert.equal(card.shadowRoot.querySelectorAll('.day').length,0);assert.match(card.shadowRoot.querySelector('.empty').textContent,/Keine offenen/);// Exercise the actual recurrence editor, with minimal native-control shims for linkedom.
+card._data={...card._data,occurrences:[]};card.render();assert.equal(card.shadowRoot.querySelectorAll('.day').length,0);assert.match(card.shadowRoot.querySelector('.empty').textContent,/Keine offenen/);// Parents see each child's completion but cannot toggle either child.
+card._data={...data,occurrences:[{...row('Paul','p'),completed:true},row('Maximilian','m')]};card.render();
+assert.equal(card.shadowRoot.querySelectorAll('.row').length,1);
+assert.equal(card.shadowRoot.querySelectorAll('.assignee.completed').length,1);
+assert.equal(card.shadowRoot.querySelector('.row.completed'),null);
+assert.equal(card.shadowRoot.querySelector('[data-group]'),null);
+card._data.occurrences[1].completed=true;card.render();assert.ok(card.shadowRoot.querySelector('.row.completed'));
+card._data.today='2026-11-10';card.render();assert.equal(card.shadowRoot.querySelectorAll('.day').length,0);
+// Exercise the actual recurrence editor, with minimal native-control shims for linkedom.
 card._data={...data,tasks:[]};card._tab='settings';card.render();
 const saved=[];card.mutate=async(type,payload)=>saved.push({type,payload});
 card.edit();let dialog=card.shadowRoot.querySelector('dialog');

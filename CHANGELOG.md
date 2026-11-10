@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.2.1
+
+- Abgehakte Hausarbeiten bleiben durchgestrichen bis einschließlich ihres Fälligkeitstags sichtbar.
+- Erneuter Klick öffnet die eigene Aufgabe wieder; serverseitig nur für das zugeteilte Kind erlaubt.
+- Eltern sehen getrennte Erledigt-Markierungen für beide Kinder, haben weiterhin keine Häkchen zum Bedienen.
+- Offene Zähler schließen erledigte Aufgaben aus. Automatisches Ausblenden am Tag nach Fälligkeit in der HA-Zeitzone.
+- Bestehende gespeicherte Erledigungen werden ebenfalls berücksichtigt; keine Datenmigration erforderlich.
+- 38 Logiktests und Frontend-Prüfungen erfolgreich.
+
 ## 0.2.0
 
 - Neuer Wiederholungseditor nach Kalendermuster: Wiederkehrend, Wiederholen alle X Tag/Woche/Monat/Jahr, auswählbare Wochentage und optionales Bis-Datum.

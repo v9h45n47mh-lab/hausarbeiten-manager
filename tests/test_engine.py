@@ -228,5 +228,54 @@ class EngineTests(unittest.TestCase):
                 stamp=date(2026,month,day)
                 self.assertEqual(e.occurs(task,stamp),e.occurs(updated,stamp))
 
+    def test_completed_remains_until_day_after_due_not_completion(self):
+        due=date(2026,11,12)
+        data=e.save_task(e.empty_data(),raw(start=due.isoformat()),PARENT)
+        task=data['tasks'][0]
+        data=e.complete(data,task['id'],'Paul',due.isoformat(),PAUL,TODAY)
+        for today in [TODAY,date(2026,11,10),due]:
+            rows=e.occurrences(data,['Paul'],today,date(2026,11,15),include_done=True)
+            self.assertEqual(len(rows),1)
+            self.assertTrue(rows[0]['completed'])
+        self.assertEqual(e.occurrences(data,['Paul'],date(2026,11,13),date(2026,11,15),include_done=True),[])
+        self.assertEqual(e.occurrences(data,['Paul'],TODAY,due),[])
+
+    def test_reopen_only_own_occurrence_and_is_idempotent(self):
+        data=e.save_task(e.empty_data(),raw(kind='daily'),PARENT)
+        ident=data['tasks'][0]['id']
+        done=e.complete(data,ident,'Paul','2026-11-09',PAUL,TODAY)
+        undone=e.reopen(done,ident,'Paul','2026-11-09',PAUL,TODAY)
+        self.assertEqual(undone['done'],{})
+        self.assertEqual(e.reopen(undone,ident,'Paul','2026-11-09',PAUL,TODAY),undone)
+        self.assertTrue(done['done'])
+        for actor in [PARENT,MAX,e.actor_for('other_admin',MAPPING,True)]:
+            with self.assertRaises(PermissionError):e.reopen(done,ident,'Paul','2026-11-09',actor,TODAY)
+
+    def test_reopen_preserves_other_child_and_other_date(self):
+        data=e.save_task(e.empty_data(),raw(kind='daily'),PARENT)
+        ident=data['tasks'][0]['id']
+        for person,actor,day in [('Paul',PAUL,'2026-11-09'),('Maximilian',MAX,'2026-11-09'),('Paul',PAUL,'2026-11-10')]:
+            data=e.complete(data,ident,person,day,actor,TODAY)
+        undone=e.reopen(data,ident,'Paul','2026-11-09',PAUL,TODAY)
+        self.assertEqual(len(undone['done']),2)
+        rows=e.occurrences(undone,['Paul','Maximilian'],TODAY,date(2026,11,10),include_done=True)
+        self.assertEqual(sum(row['completed'] for row in rows),2)
+
+    def test_reopen_invalid_occurrence_is_rejected(self):
+        data=e.save_task(e.empty_data(),raw(),PARENT)
+        for ident,day in [('missing','2026-11-09'),(data['tasks'][0]['id'],'2026-11-10')]:
+            with self.assertRaises(ValueError):e.reopen(data,ident,'Paul',day,PAUL,TODAY)
+
+    def test_completed_remains_during_vacation_and_can_be_reopened(self):
+        data=e.save_task(e.empty_data(),raw(),PARENT)
+        ident=data['tasks'][0]['id']
+        data=e.complete(data,ident,'Paul','2026-11-09',PAUL,TODAY)
+        data=e.save_vacation(data,True,PARENT,TODAY)
+        rows=e.occurrences(data,['Paul'],TODAY,TODAY,include_done=True)
+        self.assertEqual(len(rows),1)
+        self.assertTrue(rows[0]['completed'])
+        data=e.reopen(data,ident,'Paul','2026-11-09',PAUL,TODAY)
+        self.assertEqual(e.occurrences(data,['Paul'],TODAY,TODAY,include_done=True),[])
+
 
 if __name__=='__main__':unittest.main()

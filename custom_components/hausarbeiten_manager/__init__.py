@@ -17,10 +17,10 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 from .engine import (CHILDREN, actor_for, can_edit, can_manage_settings, complete, delete_task, empty_data,
-                     migrate_vacation, occurrences, save_task, save_vacation, visible_people, vacation_on)
+                     migrate_vacation, occurrences, reopen, save_task, save_vacation, visible_people, vacation_on)
 
 DOMAIN = 'hausarbeiten_manager'
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 SIGNAL = DOMAIN + '_updated'
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ async def async_setup(hass, config):
     await hass.http.async_register_static_paths([StaticPathConfig(
         '/hausarbeiten-manager/card.js', str(Path(__file__).parent/'frontend'/'card.js'), False)])
     frontend.add_extra_js_url(hass, '/hausarbeiten-manager/card.js?v='+VERSION)
-    for command in (ws_get, ws_save, ws_complete, ws_delete, ws_vacation):
+    for command in (ws_get, ws_save, ws_complete, ws_reopen, ws_delete, ws_vacation):
         websocket_api.async_register_command(hass, command)
     return True
 
@@ -95,7 +95,7 @@ class Manager:
         return {'revision': self.data['revision'], 'today': today.isoformat(),
                 'person': actor['person'], 'parent': actor['parent'],
                 'settings_allowed': can_manage_settings(actor), 'people': people,
-                'tasks': tasks, 'occurrences': occurrences(self.data, people, today, today+timedelta(days=6)),
+                'tasks': tasks, 'occurrences': occurrences(self.data, people, today, today+timedelta(days=6), include_done=True),
                 'vacation_active': self.data.get('vacation_enabled', False),
                 'vacations': deepcopy(self.data['vacations']) if can_manage_settings(actor) else [], 'version': VERSION}
 
@@ -107,6 +107,8 @@ class Manager:
                 result = save_task(self.data, payload, actor)
             elif operation == 'complete':
                 result = complete(self.data, payload['task_id'], payload['person'], payload['date'], actor, self.today())
+            elif operation == 'reopen':
+                result = reopen(self.data, payload['task_id'], payload['person'], payload['date'], actor, self.today())
             elif operation == 'delete':
                 result = delete_task(self.data, payload['task_id'], actor)
             else:
@@ -164,6 +166,14 @@ async def ws_save(hass, connection, msg):
 @websocket_api.async_response
 async def ws_complete(hass, connection, msg):
     await respond(hass, connection, msg, 'complete')
+
+
+@websocket_api.websocket_command({vol.Required('type'): DOMAIN+'/reopen',
+    vol.Required('revision'): vol.All(int, vol.Range(min=0)), vol.Required('task_id'): str,
+    vol.Required('person'): str, vol.Required('date'): str})
+@websocket_api.async_response
+async def ws_reopen(hass, connection, msg):
+    await respond(hass, connection, msg, 'reopen')
 
 
 @websocket_api.websocket_command({vol.Required('type'): DOMAIN+'/delete_task',

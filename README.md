@@ -130,3 +130,15 @@ Kalendertage, die nicht existieren, werden übersprungen: Eine monatliche Aufgab
 Bestehende Serien und Erledigungen bleiben erhalten. Beim Bearbeiten einer bisherigen monatlichen Wochentagsregel wird deren Muster im neuen Editor vorbelegt. Kinder sehen weiterhin nur die Anlage einmaliger eigener Arbeiten; Wiederholungsregeln können nur über die Elternverwaltung angelegt werden.
 
 33 Logiktests und Frontend-DOM-Prüfungen erfolgreich, einschließlich Monats-/Jahresabstand, Schaltjahren, alten Serien, Editor-Eingaben und Kinderrechten. Ein visueller Test im laufenden HA steht aus. Marketplace-Update installieren, HA neu starten und Dashboard/App neu laden. Das Dashboard-YAML bleibt gültig.
+
+## Erledigt und wieder offen ab 0.2.1
+
+Ein Klick auf das eigene Häkchen markiert den Termin als erledigt. Der Titel wird durchgestrichen und das Häkchen bleibt angehakt. Ein erneuter Klick öffnet diesen Termin wieder. Nur das jeweilige Kind darf seinen eigenen Termin umstellen; Vera und Manuel sehen den Status, dürfen aber weiterhin nicht für die Kinder abhaken oder wieder öffnen.
+
+Erledigte Termine bleiben bis einschließlich ihres **Fälligkeitstags** sichtbar. Am Folgetag verschwinden sie aus der Sieben-Tage-Ansicht automatisch. Beispiel: Eine für Donnerstag fällige Arbeit wird bereits Dienstag erledigt; sie bleibt bis Donnerstag durchgestrichen und verschwindet Freitag. Der Status bleibt gespeichert, auch nach Neustart. Bestehende Erledigungen für heute und die nächsten sechs Tage erscheinen entsprechend wieder durchgestrichen.
+
+Bei zusammengefassten Elternzeilen wird jedes fertige Kind einzeln markiert. Der gemeinsame Titel wird erst durchgestrichen, wenn alle zugehörigen Termine erledigt sind. Die Zähler zeigen nur die noch offenen Aufgaben. Auch Tage mit ausschließlich erledigten Aufgaben bleiben bis zum nächsten Tag sichtbar. Der native HA-Kalender enthält weiterhin nur offene Termine; die Durchstreichung betrifft die Manager-Karte.
+
+Der neue WebSocket-Befehl heißt `hausarbeiten_manager/reopen`. Die bestehende Access-Control-Freigabe `hausarbeiten_manager/*` deckt ihn ab; bei expliziter Befehlsliste ergänzen. Benutzerprüfung, Revision und Speicherung erfolgen serverseitig wie beim Abhaken.
+
+38 Logiktests und Frontend-DOM-Prüfungen erfolgreich: frühzeitiges Erledigen, Fälligkeitstag/Folgetag, Wiederöffnen, getrennte Kinder/Termine, Berechtigungen, Elternansicht und Zähler. Ein Live-Test in HA steht aus. Update im Marketplace installieren, HA neu starten und Dashboard/App neu laden. Dashboard-YAML und Benutzerzuordnung bleiben gültig.

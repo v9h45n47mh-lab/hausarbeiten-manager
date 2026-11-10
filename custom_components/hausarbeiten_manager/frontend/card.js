@@ -1,5 +1,5 @@
-/* Hausarbeiten Manager 0.2.0 — no external frontend dependencies. */
-const HM_VERSION='0.2.0';
+/* Hausarbeiten Manager 0.2.1 — no external frontend dependencies. */
+const HM_VERSION='0.2.1';
 const hmEsc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hmDays=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const hmLabel=t=>{
@@ -11,6 +11,8 @@ const hmLabel=t=>{
  return t.kind==='monthly_date'?`${prefix} · am ${Number(t.start.slice(8))}. Tag`:`${prefix} · ${t.nth===-1?'Letzter':t.nth+'.'} ${t.weekdays.map(w=>hmDays[w]).join(', ')}`;
 };
 const HM_STYLE=`
+.row.completed .main strong,.row.completed .description,.assignee.completed{text-decoration:line-through;color:var(--hm-muted)}.complete[aria-pressed="true"]{color:var(--success-color,#43a047)}
+
 .repeat-toggle{display:inline-flex;align-items:center;gap:8px;margin:4px 0 10px;padding:8px 12px;border-radius:6px;background:var(--secondary-background-color,#f2f2f2);font-size:13px;cursor:pointer}.repeat-toggle input{width:18px;min-height:18px;accent-color:var(--hm-accent)}.repeat-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 12px}.repeat-line>span{font-size:12px;color:var(--hm-muted)}.repeat-line input{width:70px}.repeat-line select{width:110px}.repeat-weekdays{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.repeat-weekdays label{cursor:pointer;position:relative}.repeat-weekdays input{position:absolute;opacity:0;width:1px;min-height:1px}.repeat-weekdays span{display:grid;place-items:center;width:34px;height:34px;background:var(--secondary-background-color,#eee);font-size:13px;border-radius:3px}.repeat-weekdays input:checked+span{background:var(--hm-accent);color:var(--text-primary-color,#fff)}.repeat-weekdays input:focus-visible+span{outline:2px solid var(--hm-accent);outline-offset:2px}.repeat-until input{max-width:220px}.recurrence-controls[hidden],.repeat-weekdays[hidden],.recurrence[hidden]{display:none}
 
 .settings-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 0;border-bottom:1px solid var(--hm-line)}.settings-row strong{font-size:14px;font-weight:500}.vacation-switch{appearance:none;position:relative;width:36px!important;min-height:20px!important;height:20px;border:0;border-radius:12px;background:var(--disabled-text-color,#9e9e9e);padding:0;cursor:pointer;flex-shrink:0}.vacation-switch:before{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:white;transition:transform .15s}.vacation-switch:checked{background:var(--hm-accent)}.vacation-switch:checked:before{transform:translateX(16px)}.assignee{font-size:12px;color:var(--hm-muted);padding:6px 8px}
@@ -36,10 +38,10 @@ class HausarbeitenManagerCard extends HTMLElement{
  const entries=rows.filter(r=>r.date===day);if(!entries.length)continue;
  const groups=[];
  for(const row of entries){let group=this._data.parent?groups.find(g=>g.title===row.title):null;if(!group){group={title:row.title,rows:[]};groups.push(group);}group.rows.push(row);}
- out+=`<details class="day ${i===0?'today':''}" data-day="${day}" ${this._closedDays.has(day)?'':'open'}><summary class="day-head"><strong>${i===0?'Heute · ':i===1?'Morgen · ':''}${hmEsc(this.dayTitle(day))}</strong><small>${entries.length} offen</small><span class="day-arrow">⌄</span></summary>`;
+ out+=`<details class="day ${i===0?'today':''}" data-day="${day}" ${this._closedDays.has(day)?'':'open'}><summary class="day-head"><strong>${i===0?'Heute · ':i===1?'Morgen · ':''}${hmEsc(this.dayTitle(day))}</strong><small>${entries.filter(r=>!r.completed).length} offen${entries.some(r=>r.completed)?` · ${entries.filter(r=>r.completed).length} erledigt`:""}</small><span class="day-arrow">⌄</span></summary>`;
  for(const group of groups){const index=this._groups.push(group)-1;
  const descriptions=[...new Set(group.rows.map(r=>r.description).filter(Boolean))];
- out+=`<div class="row"><div class="main"><strong>${hmEsc(group.title)}</strong>${descriptions.map(d=>`<div class="description">${hmEsc(d)}</div>`).join('')}</div><div class="checks">${[...new Set(group.rows.map(r=>r.person))].map(person=>this._data.parent?`<span class="assignee">${hmEsc(person)}</span>`:`<button class="complete" data-group="${index}" data-person="${hmEsc(person)}" aria-label="${hmEsc(group.title+' für '+person+' erledigen')}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/></svg>${this._data.parent?`<span>${hmEsc(person)}</span>`:''}</button>`).join('')}</div></div>`;
+ out+=`<div class="row ${group.rows.every(r=>r.completed)?'completed':''}"><div class="main"><strong>${hmEsc(group.title)}</strong>${descriptions.map(d=>`<div class="description">${hmEsc(d)}</div>`).join('')}</div><div class="checks">${[...new Set(group.rows.map(r=>r.person))].map(person=>{const done=group.rows.filter(r=>r.person===person).every(r=>r.completed);return this._data.parent?`<span class="assignee ${done?'completed':''}">${hmEsc(person)}${done?' ✓':''}</span>`:`<button class="complete" data-group="${index}" data-person="${hmEsc(person)}" aria-pressed="${done}" aria-label="${hmEsc(group.title+' für '+person+(done?' wieder öffnen':' erledigen'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/>${done?'<path d="m7 12 3 3 7-7"/>':''}</svg></button>`;}).join('')}</div></div>`;
  }out+='</details>';
  }return out||'<div class="empty">Keine offenen Hausarbeiten in den nächsten 7 Tagen.</div>';
  }
@@ -56,14 +58,14 @@ class HausarbeitenManagerCard extends HTMLElement{
     <div class="header"><ha-icon icon="mdi:calendar-check-outline"></ha-icon><span class="title">${hmEsc(this._config.title)}</span></div>
     ${d?`<div class="tabs"><button data-tab="calendar" class="${this._tab==='calendar'?'active':''}">Nächste 7 Tage</button>${d.settings_allowed?`<button data-tab="settings" class="settings-button ${this._tab==='settings'?'active':''}" aria-label="Einstellungen" title="Einstellungen"><ha-icon icon="mdi:cog-outline"></ha-icon></button>`:''}</div>`:''}
     <div class="content">${this._error?`<div class="error" role="alert">${hmEsc(this._error)}</div>`:''}
-    ${d?`${this._tab==='settings'?this.settings():`<div class="toolbar"><span class="pill">${d.occurrences.length} offen</span>${!d.parent?'<button class="add" data-add>+ Einmalige Arbeit</button>':''}</div>${this.calendar()}`}<div class="footer">${this._tab==='settings'?`<span>Hausarbeiten Manager · ${HM_VERSION}</span>`:'<span></span>'}<button data-refresh>Aktualisieren</button></div>`:`<div class="empty">${this._error?'Bitte Benutzerzuordnung und Access-Control-Freigabe prüfen.':'Hausarbeiten werden geladen …'}</div>`}
+    ${d?`${this._tab==='settings'?this.settings():`<div class="toolbar"><span class="pill">${d.occurrences.filter(r=>!r.completed).length} offen</span>${!d.parent?'<button class="add" data-add>+ Einmalige Arbeit</button>':''}</div>${this.calendar()}`}<div class="footer">${this._tab==='settings'?`<span>Hausarbeiten Manager · ${HM_VERSION}</span>`:'<span></span>'}<button data-refresh>Aktualisieren</button></div>`:`<div class="empty">${this._error?'Bitte Benutzerzuordnung und Access-Control-Freigabe prüfen.':'Hausarbeiten werden geladen …'}</div>`}
     </div></ha-card><div class="dialog-host"></div>`;
  this.shadowRoot.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{this._tab=b.dataset.tab;this.render();});
  this.shadowRoot.querySelector('[data-refresh]')?.addEventListener('click',()=>this.load());
  this.shadowRoot.querySelector('[data-add]')?.addEventListener('click',()=>this.edit());
  this.shadowRoot.querySelector('[data-vacation]')?.addEventListener('change',e=>this.mutate('vacation',{enabled:e.target.checked}));
  this.shadowRoot.querySelectorAll('[data-day]').forEach(el=>el.addEventListener('toggle',()=>{if(el.open)this._closedDays.delete(el.dataset.day);else this._closedDays.add(el.dataset.day);}));
- this.shadowRoot.querySelectorAll('[data-group]').forEach(button=>button.onclick=async()=>{if(this._data.parent)return;const group=this._groups[Number(button.dataset.group)];const rows=group.rows.filter(r=>r.person===button.dataset.person);for(const row of rows){await this.mutate('complete',{task_id:row.task_id,person:row.person,date:row.date});if(this._error)break;}});
+ this.shadowRoot.querySelectorAll('[data-group]').forEach(button=>button.onclick=async()=>{if(this._data.parent)return;const group=this._groups[Number(button.dataset.group)];const rows=group.rows.filter(r=>r.person===button.dataset.person);const operation=rows.every(r=>r.completed)?'reopen':'complete';for(const row of rows.filter(r=>operation==='reopen'||!r.completed)){await this.mutate(operation,{task_id:row.task_id,person:row.person,date:row.date});if(this._error)break;}});
  this.shadowRoot.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>this.edit(d.tasks.find(t=>t.id===b.dataset.edit)));
  this.shadowRoot.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{const task=d.tasks.find(t=>t.id===b.dataset.delete);this.confirmDelete(task);});
  }
