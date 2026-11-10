@@ -1,5 +1,5 @@
-/* Hausarbeiten Manager 0.2.2 — no external frontend dependencies. */
-const HM_VERSION='0.2.2';
+/* Hausarbeiten Manager 0.2.3 — no external frontend dependencies. */
+const HM_VERSION='0.2.3';
 const hmEsc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hmDays=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const hmLabel=t=>{
@@ -55,13 +55,11 @@ class HausarbeitenManagerCard extends HTMLElement{
   const d=this._data;
   if(this._tab==='settings'&&!d?.settings_allowed)this._tab='calendar';
   this.shadowRoot.innerHTML=`<style>${HM_STYLE}</style><ha-card>
-    <div class="header"><ha-icon icon="mdi:calendar-check-outline"></ha-icon><span class="title">${hmEsc(this._config.title)}</span></div>
-    ${d?`<div class="tabs"><button data-tab="calendar" class="${this._tab==='calendar'?'active':''}">Nächste 7 Tage</button>${d.settings_allowed?`<button data-tab="settings" class="settings-button ${this._tab==='settings'?'active':''}" aria-label="Einstellungen" title="Einstellungen"><ha-icon icon="mdi:cog-outline"></ha-icon></button>`:''}</div>`:''}
+    <div class="header"><ha-icon icon="mdi:calendar-check-outline"></ha-icon><span class="title">${hmEsc(this._config.title)}</span>${d?.settings_allowed?`<button data-tab="${this._tab==='settings'?'calendar':'settings'}" class="settings-button" aria-label="${this._tab==='settings'?'Zurück zu Hausarbeiten':'Einstellungen'}" title="${this._tab==='settings'?'Zurück':'Einstellungen'}"><ha-icon icon="${this._tab==='settings'?'mdi:arrow-left':'mdi:cog-outline'}"></ha-icon></button>`:''}</div>
     <div class="content">${this._error?`<div class="error" role="alert">${hmEsc(this._error)}</div>`:''}
-    ${d?`${this._tab==='settings'?this.settings():`<div class="toolbar"><span class="pill">${d.occurrences.filter(r=>!r.completed).length} offen</span>${!d.parent?'<button class="add" data-add>+ Einmalige Arbeit</button>':''}</div>${this.calendar()}`}<div class="footer">${this._tab==='settings'?`<span>Hausarbeiten Manager · ${HM_VERSION}</span>`:'<span></span>'}<button data-refresh>Aktualisieren</button></div>`:`<div class="empty">${this._error?'Bitte Benutzerzuordnung und Access-Control-Freigabe prüfen.':'Hausarbeiten werden geladen …'}</div>`}
+    ${d?`${this._tab==='settings'?this.settings():`<div class="toolbar"><span class="pill">${d.occurrences.filter(r=>!r.completed).length} offen</span>${!d.parent?'<button class="add" data-add>+ Einmalige Arbeit</button>':''}</div>${this.calendar()}`}${this._tab==='settings'?`<div class="footer"><span>Hausarbeiten Manager · ${HM_VERSION}</span></div>`:''}`:`<div class="empty">${this._error?'Bitte Benutzerzuordnung und Access-Control-Freigabe prüfen.':'Hausarbeiten werden geladen …'}</div>`}
     </div></ha-card><div class="dialog-host"></div>`;
  this.shadowRoot.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{this._tab=b.dataset.tab;this.render();});
- this.shadowRoot.querySelector('[data-refresh]')?.addEventListener('click',()=>this.load());
  this.shadowRoot.querySelector('[data-add]')?.addEventListener('click',()=>this.edit());
  this.shadowRoot.querySelector('[data-vacation]')?.addEventListener('change',e=>this.mutate('vacation',{enabled:e.target.checked}));
  this.shadowRoot.querySelectorAll('[data-day]').forEach(el=>el.addEventListener('toggle',()=>{if(el.open)this._closedDays.delete(el.dataset.day);else this._closedDays.add(el.dataset.day);}));

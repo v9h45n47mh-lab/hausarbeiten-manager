@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.2.3
+
+- Tabzeile Nächste 7 Tage entfernt; die Sieben-Tage-Ansicht bleibt bestehen.
+- Aktualisieren-Button und leerer Kartenfuß auf der Hauptseite entfernt.
+- Eltern-Einstellungen jetzt über das Zahnrad im Kopf; dort führt ein Zurück-Pfeil wieder zur Übersicht.
+- Versionsnummer bleibt nur in den Einstellungen sichtbar. Automatische Aktualisierung alle 15 Sekunden bleibt erhalten.
+
 ## 0.2.2
 
 - Neue Option Abwechselnd für wiederkehrende Aufgaben, mit wählbarem Startkind Paul/Maximilian.

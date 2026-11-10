@@ -154,3 +154,11 @@ Der Wechsel richtet sich nach den **geplanten Terminen**, unabhängig davon, wan
 Vorhandene Aufgaben werden nicht automatisch umgestellt. Erst die ausdrücklich aktivierte Option ändert die Zuordnung einer Serie; eine spätere Änderung an Startdatum, Wiederholung oder Startkind berechnet deren Zuständigkeit neu. Erledigungen bleiben mit ihrer bisherigen Termin-/Personenkennung gespeichert.
 
 45 Logiktests und Frontend-DOM-Prüfungen erfolgreich, darunter Startkind, Wochenwechsel, alle Wiederholungsmuster, Monatslücken, Schaltjahre, Urlaub, berechtigte Erledigung/Wiederöffnung und unveränderte Altaufgaben. Ein Live-Test in HA steht aus. Marketplace-Update installieren, HA neu starten und Dashboard/App neu laden. Dashboard-YAML bleibt gültig.
+
+## Kompakte Ansicht ab 0.2.3
+
+Die separate Tabzeile „Nächste 7 Tage“ und der Aktualisieren-Button entfallen. Die Ansicht zeigt weiterhin die nächsten sieben Tage. Vera und Manuel erreichen Einstellungen über das Zahnrad im Kopf und wechseln per Zurück-Pfeil zur Übersicht. Kinder sehen kein Zahnrad. Die Versionsnummer steht ausschließlich in den Einstellungen.
+
+Die automatische Aktualisierung alle 15 Sekunden bleibt bestehen. Zusätzlich kann die Ansicht über die Aktualisierungsfunktion der HA-App (nach unten ziehen, sofern dort verfügbar) neu geladen werden. Kein zusätzlicher Zieh-Handler in der Karte.
+
+Frontend-DOM-Prüfungen und JavaScript-Syntaxprüfung erfolgreich. Marketplace-Update installieren, HA neu starten und Dashboard/App neu laden. Dashboard-YAML bleibt gültig.
