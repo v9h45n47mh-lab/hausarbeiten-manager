@@ -20,14 +20,14 @@ from .engine import (CHILDREN, actor_for, can_edit, can_manage_settings, complet
                      migrate_vacation, occurrences, reopen, save_task, save_vacation, visible_people, vacation_on)
 
 DOMAIN = 'hausarbeiten_manager'
-VERSION = '0.2.5'
+VERSION = '0.3.0'
 SIGNAL = DOMAIN + '_updated'
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup(hass, config):
     await hass.http.async_register_static_paths([StaticPathConfig(
-        '/hausarbeiten-manager/card.js', str(Path(__file__).parent/'frontend'/'card.js'), False)])
+        '/hausarbeiten-manager', str(Path(__file__).parent/'frontend'), False)])
     frontend.add_extra_js_url(hass, '/hausarbeiten-manager/card.js?v='+VERSION)
     for command in (ws_get, ws_subscribe, ws_save, ws_complete, ws_reopen, ws_delete, ws_vacation):
         websocket_api.async_register_command(hass, command)

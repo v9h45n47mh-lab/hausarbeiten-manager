@@ -180,3 +180,7 @@ Bei einer Freigabe von `hausarbeiten_manager/*` ist keine weitere Befehlsfreigab
 Das Einstellungssymbol ist jetzt wie in der Spülmaschinen-App das ausgefüllte Zahnrad `mdi:cog`. Es bleibt ausschließlich Vera/Manuel sichtbar.
 
 49 Python-Tests und beide Frontend-DOM-Prüfungen erfolgreich: Echtzeitmeldung beim Abhaken/Wiederöffnen, zwei Clients, individuelle Daten, Speicherfehler, Tageswechsel, erhaltene Formulare, Aktualisierungen während laufender Abrufe, Abo-Abmeldung und Rückfallebene. Ein Live-Test in einer laufenden HA-Instanz steht aus. Update im Marketplace installieren, HA neu starten und Dashboard/App neu laden. Das Dashboard-YAML bleibt gültig.
+
+## Gemeinsame Oberfläche ab 0.3.0
+
+Die Karte verwendet HA UI Kit **1.0.0**, fest mitgeliefert unter `frontend/family-ui/1.0.0/`. Navigation, Einstellungen, Klappbereiche, Symbole, Schrift, Farben und Abstände stammen aus dem gemeinsamen Modul. Die Versionszeile steht weiterhin nur in den Einstellungen für Vera/Manuel. Keine Zusatzinstallation, keine externen Laufzeitaufrufe. Bestehende Dashboard-YAML, Daten und Berechtigungen bleiben gültig. Nach dem Marketplace-Update HA neu starten und Dashboard/App neu laden.

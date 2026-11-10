@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),{readFileSync}=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {parseHTML}=require('linkedom');const {window}=parseHTML('<html><body></body></html>');
-vm.runInNewContext(readFileSync(path.join(__dirname,'../custom_components/hausarbeiten_manager/frontend/card.js'),'utf8'),{window,HTMLElement:window.HTMLElement,customElements:window.customElements,Intl,Date,setInterval,clearInterval,FormData,Number,JSON,String,Set});
+vm.runInNewContext(require('./card_source.cjs')(),{window,HTMLElement:window.HTMLElement,customElements:window.customElements,Intl,Date,setInterval,clearInterval,FormData,Number,JSON,String,Set});
 Object.defineProperty(window.HTMLInputElement.prototype,'checked',{get(){return this.hasAttribute('checked')},set(v){v?this.setAttribute('checked',''):this.removeAttribute('checked')}});
 Object.defineProperty(window.HTMLSelectElement.prototype,'value',{get(){return (this.querySelector('option[selected]')||this.querySelector('option'))?.value||''},set(value){this.querySelectorAll('option').forEach(o=>o.toggleAttribute('selected',o.value===String(value)))}});
 window.HTMLElement.prototype.showModal=function(){this.setAttribute('open','')};
@@ -11,8 +11,8 @@ const data={revision:0,today:'2026-11-09',person:'Vera',parent:true,settings_all
 (async()=>{const card=new Card();card.setConfig({});card._data=data;card._user='v';const calls=[];card._hass={user:{id:'v'},callWS:async msg=>{calls.push(msg);return {...card._data,revision:card._data.revision+1,occurrences:card._data.occurrences.map(r=>r.task_id===msg.task_id&&r.person===msg.person?{...r,completed:msg.type.endsWith('/complete')}:r)}}};card.render();
 assert.equal(card.shadowRoot.querySelectorAll('.day').length,1);assert.equal(card.shadowRoot.querySelectorAll('.row').length,1);assert.equal(card.shadowRoot.querySelectorAll('[data-group]').length,0);assert.equal(card.shadowRoot.querySelectorAll('.assignee').length,2);
 assert.equal(card.shadowRoot.querySelectorAll('.identity').length,0);assert.equal(card.shadowRoot.querySelector('.footer'),null);assert.equal(card.shadowRoot.querySelector('[data-refresh]'),null);assert.equal(card.shadowRoot.querySelector('.tabs'),null);
-card.shadowRoot.querySelector('[data-tab="settings"]').click();assert.equal(card.shadowRoot.querySelectorAll('[data-add]').length,1);assert.equal(card.shadowRoot.querySelectorAll('input[data-vacation][type="checkbox"]').length,1);assert.equal(card.shadowRoot.querySelectorAll('input[type="date"]').length,0);assert.match(card.shadowRoot.querySelector('.footer').textContent,/0\.2\.5/);
-card._data={...data,parent:false,settings_allowed:false,person:'Paul',occurrences:[row('Paul','p')]};card.render();assert.equal(card._tab,'calendar');assert.equal(card.shadowRoot.querySelectorAll('[data-tab="settings"],[data-vacation]').length,0);assert.match(card.shadowRoot.querySelector('[data-add]').textContent,/Einmalige Arbeit/);
+card.shadowRoot.querySelector('[data-page="settings"]').click();assert.equal(card.shadowRoot.querySelectorAll('[data-action="add"]').length,1);assert.equal(card.shadowRoot.querySelectorAll('[data-action="vacation"][role="switch"]').length,1);assert.equal(card.shadowRoot.querySelectorAll('input[type="date"]').length,0);assert.match(card.shadowRoot.querySelector('.version-info').textContent,/0\.3\.0/);
+card._data={...data,parent:false,settings_allowed:false,person:'Paul',occurrences:[row('Paul','p')]};card.render();assert.equal(card._tab,'calendar');assert.equal(card.shadowRoot.querySelectorAll('[data-page="settings"],[data-action="vacation"]').length,0);assert.match(card.shadowRoot.querySelector('[data-action="add"]').textContent,/Einmalige Arbeit/);
 card.shadowRoot.querySelector('[data-group]').click();await new Promise(r=>setImmediate(r));assert.equal(calls[0].person,'Paul');
 assert.ok(card.shadowRoot.querySelector('.row.completed'));
 assert.equal(card.shadowRoot.querySelector('[data-group]').getAttribute('aria-pressed'),'true');
@@ -23,8 +23,8 @@ assert.equal(card.shadowRoot.querySelector('.row.completed'),null);
 assert.equal(card.shadowRoot.querySelector('[data-group]').getAttribute('aria-pressed'),'false');
 assert.match(card.shadowRoot.querySelector('.pill').textContent,/1 offen/);
 
-card._closedDays.add('2026-11-09');card.render();assert.equal(card.shadowRoot.querySelector('.day').hasAttribute('open'),false);card._closedDays.clear();card.render();assert.equal(card.shadowRoot.querySelector('.day').hasAttribute('open'),true);
-card._data={...card._data,occurrences:[]};card.render();assert.equal(card.shadowRoot.querySelectorAll('.day').length,0);assert.match(card.shadowRoot.querySelector('.empty').textContent,/Keine offenen/);// Parents see each child's completion but cannot toggle either child.
+card.shadowRoot.querySelector('.day .settings-fold').click();card.render();assert.equal(card.shadowRoot.querySelector('.day .settings-fold').getAttribute('aria-expanded')==='true',false);card.shadowRoot.querySelector('.day .settings-fold').click();card.render();assert.equal(card.shadowRoot.querySelector('.day .settings-fold').getAttribute('aria-expanded')==='true',true);
+card._data={...card._data,occurrences:[]};card.render();assert.equal(card.shadowRoot.querySelectorAll('.day').length,0);assert.match(card.shadowRoot.querySelector('.notice').textContent,/Keine offenen/);// Parents see each child's completion but cannot toggle either child.
 card._data={...data,occurrences:[{...row('Paul','p'),completed:true},row('Maximilian','m')]};card.render();
 assert.equal(card.shadowRoot.querySelectorAll('.row').length,1);
 assert.equal(card.shadowRoot.querySelectorAll('.assignee.completed').length,1);

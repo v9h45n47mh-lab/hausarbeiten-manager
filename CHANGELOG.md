@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.3.0
+
+- Vollständige Oberfläche auf lokal fest eingebundenes HA UI Kit 1.0.0 umgestellt: Navigation, Klappbereiche, Zeilen, Symbole, Farben, Schrift, Abstände und Versionsanzeige.
+- Gemeinsame Buttons, Eingaben, Schalter und native Dialoge für Hausarbeiten; bestehende Aufgaben-, NFC- und Berechtigungslogik unverändert.
+- Frontend-Verzeichnis liefert auch die versionierten Kit-Module aus; keine zusätzliche Integration und kein CDN erforderlich.
+
 ## 0.2.5
 
 - Einstellungssymbol exakt wie im Shutter Manager: identisches SVG, 24 px, grau im Normalzustand und HA-Akzentfarbe mit getöntem Hintergrund bei geöffneten Einstellungen.
