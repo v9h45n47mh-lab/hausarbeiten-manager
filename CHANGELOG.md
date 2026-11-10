@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.1.4
+
+- Eigenes Logo für Home Assistant und Marketplace in 256 und 512 Pixeln.
+- Aufgabenliste mit Häkchen und Besen, passend zur Spülmaschinen-App.
+- Keine funktionalen Änderungen.
+
 ## 0.1.3
 
 - Versionsanzeige ausschließlich unter Einstellungen; Benutzername im Kopf entfernt.

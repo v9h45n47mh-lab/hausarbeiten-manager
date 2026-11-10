@@ -1,5 +1,5 @@
-/* Hausarbeiten Manager 0.1.3 — no external frontend dependencies. */
-const HM_VERSION='0.1.3';
+/* Hausarbeiten Manager 0.1.4 — no external frontend dependencies. */
+const HM_VERSION='0.1.4';
 const hmEsc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hmDays=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const hmLabel=t=>t.kind==='once'?'Einmalig':t.kind==='daily'?(t.interval===1?'Täglich':`Alle ${t.interval} Tage`):t.kind==='weekly'?`${t.interval===1?'Jede Woche':`Alle ${t.interval} Wochen`} · ${t.weekdays.map(w=>hmDays[w]).join(', ')}`:`${t.interval===1?'Monatlich':`Alle ${t.interval} Monate`} · ${t.nth===-1?'Letzter':t.nth+'.'} ${t.weekdays.map(w=>hmDays[w]).join(', ')}`;

@@ -1,3 +1,5 @@
+<img src="custom_components/hausarbeiten_manager/brand/icon.png" alt="Hausarbeiten Manager" width="96" height="96">
+
 # Hausarbeiten Manager
 
 Lokaler Hausarbeitenkalender für Home Assistant. Eltern planen Aufgaben für Maximilian und Paul; die Kinder sehen ihre eigenen Aufgaben und können eigene Hausarbeiten anlegen. Wiederholungen, Urlaubszeiträume und Erledigungen werden lokal gespeichert.
@@ -106,3 +108,9 @@ Vera und Manuel legen Hausarbeiten unter Einstellungen (Zahnrad) an und verwalte
 Versionsnummer nur in Einstellungen; kein Benutzername im Kartenkopf. Urlaubsmodus über den Schalter unter Einstellungen ein-/ausschalten. Kein Zeitraum, keine automatische Abschaltung. Während der Pause entfallen Hausarbeiten; nach Ausschalten laufen sie ab heute wieder im gewohnten Rhythmus. Vergangene pausierte Tage bleiben ausgelassen. Beim Update wird ein aktuell laufender alter Urlaubszeitraum zu einem dauerhaft eingeschalteten Schalter; zukünftige alte Urlaubsplanungen entfallen.
 
 Nur Maximilian und Paul können jeweils eigene Termine abhaken. Vera und Manuel sehen die Zuordnung und verwalten Aufgaben, können aber keine Erledigungen vornehmen. Das wird im Backend geprüft.
+
+## Neu in 0.1.4
+
+Eigenes Logo für Home Assistant und Marketplace: Aufgabenliste mit Häkchen und Besen, farblich passend zur Spülmaschinen-App. Die Markenbilder liegen als `brand/icon.png` (256 × 256) und `brand/icon@2x.png` (512 × 512) innerhalb der Integration. Die funktionale Logik ist unverändert.
+
+Update im Marketplace installieren, Home Assistant neu starten und Dashboard/Companion-App neu laden. Das Dashboard-YAML bleibt gültig. Die tatsächliche Logoanzeige in deinem Marketplace bleibt vor Ort zu prüfen; zwischengespeicherte Bilder können verzögert aktualisiert werden.
