@@ -1,6 +1,6 @@
-import {UI_CSS, UI_VERSION, navigation, section, row as uiRow, button, iconButton, toggle, field, selectField, dialog as uiDialog, notice, versionInfo, icon, escapeHtml, bindUI} from './family-ui/1.0.0/family-ui.js';
-/* Hausarbeiten Manager 0.3.0 — no external frontend dependencies. */
-const HM_VERSION='0.3.0';
+import {UI_CSS, UI_VERSION, navigation, section, row as uiRow, button, iconButton, toggle, field, selectField, dialog as uiDialog, notice, versionInfo, icon, escapeHtml, bindUI} from './family-ui/1.1.0/family-ui.js';
+/* Hausarbeiten Manager 0.3.1 — no external frontend dependencies. */
+const HM_VERSION='0.3.1';
 const hmEsc=escapeHtml;
 const hmDays=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const hmLabel=t=>{

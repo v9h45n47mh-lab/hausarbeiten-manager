@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.3.1
+
+- Fest eingebundenes HA UI Kit auf 1.1.0 aktualisiert, einschließlich der neuesten gemeinsamen Komponenten und Symbole.
+- Versionierter Modulpfad, Ressourcenkennung, Prüfsummen und Versionsanzeige aktualisiert. Funktionen und Berechtigungen bleiben unverändert.
+
 ## 0.3.0
 
 - Vollständige Oberfläche auf lokal fest eingebundenes HA UI Kit 1.0.0 umgestellt: Navigation, Klappbereiche, Zeilen, Symbole, Farben, Schrift, Abstände und Versionsanzeige.

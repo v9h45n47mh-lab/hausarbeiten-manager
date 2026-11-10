@@ -184,3 +184,7 @@ Das Einstellungssymbol ist jetzt wie in der Spülmaschinen-App das ausgefüllte 
 ## Gemeinsame Oberfläche ab 0.3.0
 
 Die Karte verwendet HA UI Kit **1.0.0**, fest mitgeliefert unter `frontend/family-ui/1.0.0/`. Navigation, Einstellungen, Klappbereiche, Symbole, Schrift, Farben und Abstände stammen aus dem gemeinsamen Modul. Die Versionszeile steht weiterhin nur in den Einstellungen für Vera/Manuel. Keine Zusatzinstallation, keine externen Laufzeitaufrufe. Bestehende Dashboard-YAML, Daten und Berechtigungen bleiben gültig. Nach dem Marketplace-Update HA neu starten und Dashboard/App neu laden.
+
+## UI-Kit-Update 0.3.1
+
+Die aktive Karte verwendet nun HA UI Kit **1.1.0** aus dem lokalen Ordner `frontend/family-ui/1.1.0/`. Die bisherigen Funktionen, Daten, Karten-YAML und Berechtigungen bleiben erhalten. Die neuen Programm- und Sortierkomponenten des Kits stehen mit zur Verfügung; diese Anwendungen besitzen keine Programm-Sortierfunktion.
