@@ -25,7 +25,7 @@ def actor_for(user_id, mapping, is_admin=False):
 
 
 def can_manage_settings(actor):
-    return actor['person'] in ADULTS
+    return actor.get('settings_allowed',actor['person'] in ADULTS)
 
 
 def visible_people(actor):
@@ -262,7 +262,7 @@ def migrate_vacation(data, today):
 
 def save_vacation(data, enabled, actor, today):
     if not can_manage_settings(actor):
-        raise PermissionError('Nur Vera und Manuel dürfen die Einstellungen ändern.')
+        raise PermissionError('Deine Rolle darf die Einstellungen nicht ändern.')
     result = migrate_vacation(data, today)
     if enabled and not result['vacation_enabled']:
         result['vacation_enabled'] = True

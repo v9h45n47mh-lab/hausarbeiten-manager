@@ -1,3 +1,4 @@
+import importlib.util
 """Run the actual subscription and manager code with HA transport adapters stubbed."""
 import ast
 import asyncio
@@ -12,6 +13,18 @@ SOURCE=Path(__file__).parents[1]/'custom_components/hausarbeiten_manager/__init_
 
 
 class LiveSyncTests(unittest.IsolatedAsyncioTestCase):
+    async def test_central_roles_replace_parent_and_settings_grants(self):
+        grants={'view':True,'manage':False,'settings':False}
+        self.hass.data['family_access_manager']=SimpleNamespace(application_protocol=1,application_permissions=lambda u,a:dict(grants))
+        user=self.connection('v').user
+        actor=self.manager.actor(user)
+        self.assertFalse(actor['parent']);self.assertFalse(actor['settings_allowed'])
+        grants.update(manage=True,settings=True)
+        self.assertTrue(self.manager.actor(user)['parent']);self.assertTrue(self.manager.actor(user)['settings_allowed'])
+        grants.clear()
+        with self.assertRaises(PermissionError):self.manager.actor(user)
+        self.assertFalse(user.is_admin)
+
     def setUp(self):
         self.listeners=[]
         def connect(hass, signal, listener):
@@ -23,6 +36,9 @@ class LiveSyncTests(unittest.IsolatedAsyncioTestCase):
                    'async_dispatcher_send':send, 'websocket_api':SimpleNamespace(event_message=lambda ident,data:{'id':ident,'type':'event','event':data}),
                    'DOMAIN':'hausarbeiten_manager','SIGNAL':'updated','VERSION':'0.2.4',
                    'timedelta':timedelta,'deepcopy':deepcopy,**vars(e)}
+        spec=importlib.util.spec_from_file_location('permission_client',SOURCE.parent/'family_access.py')
+        client=importlib.util.module_from_spec(spec);spec.loader.exec_module(client)
+        namespace.update(allows=client.allows,require=client.require)
         tree=ast.parse(SOURCE.read_text())
         selected=[node for node in tree.body if isinstance(node,ast.ClassDef) and node.name=='Manager' or isinstance(node,ast.AsyncFunctionDef) and node.name=='ws_subscribe']
         for node in selected:node.decorator_list=[]

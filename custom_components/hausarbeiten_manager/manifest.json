@@ -1,7 +1,7 @@
 {
   "domain": "hausarbeiten_manager",
   "name": "Hausarbeiten Manager",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "config_flow": true,
   "codeowners": [
     "@v9h45n47mh-lab"
@@ -14,5 +14,8 @@
     "websocket_api",
     "calendar"
   ],
-  "iot_class": "local_push"
+  "iot_class": "local_push",
+  "after_dependencies": [
+    "family_access_manager"
+  ]
 }
