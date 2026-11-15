@@ -1,5 +1,16 @@
 <img src="custom_components/hausarbeiten_manager/brand/icon.png" alt="Hausarbeiten Manager" width="96" height="96">
 
+## Zentraler Urlaubsmodus · 0.5.0
+
+Der Urlaubsmodus wird ausschließlich unter **Family Access → Einstellungen → Urlaubsmodus** bedient. Die eigenen Urlaubsmodus-Bereiche und Schalter entfallen aus Light Manager, Shutter Manager und Hausarbeiten. Die Option „Im Urlaub pausieren“ je Programm bleibt erhalten; Programme ohne diese Option laufen weiter. Hausarbeiten pausieren ohne Änderung ihres Wiederholungsrhythmus und laufen beim Ausschalten ab heute weiter.
+
+Beim ersten Start wird ein bisher aktiver Urlaubsmodus einmalig zentral als aktiv übernommen. Vergangene Urlaubstage aus Hausarbeiten bleiben erhalten. Eine bewusste zentrale Änderung hat Vorrang vor später startenden Anwendungen. Bei vorübergehend fehlendem Family Access bleibt der zuletzt bestätigte Zustand erhalten.
+
+**Update:** zuerst Family Access Manager 1.2.0, danach Light Manager 1.5.0, Shutter Manager 1.9.0 und Hausarbeiten 0.5.0 installieren. Anschließend Home Assistant neu starten und Browser/App vollständig neu laden. Der zentrale Schalter speichert sofort, unabhängig von noch ungespeicherten Rollenänderungen. Bedienen dürfen echte HA-Administratoren und Eigentümer.
+
+Automationen können `family_access_manager.set_vacation` mit `enabled: true/false` verwenden. Die bisherigen Light-/Shutter-Dienste leiten an diesen Dienst weiter und behalten den ursprünglichen HA-Benutzerkontext: echte Administratoren oder vertrauenswürdige HA-Automationen dürfen schalten. Ein reines Anwendungs-Verwaltungsrecht berechtigt nicht zum globalen Umschalten. Alte lokale WebSocket-Schreibzugriffe und Sicherungswerte können den zentralen Modus nicht überschreiben.
+
+
 # Hausarbeiten Manager
 
 Lokaler Hausarbeitenkalender für Home Assistant. Eltern planen Aufgaben für Maximilian und Paul; die Kinder sehen ihre eigenen Aufgaben und können eigene Hausarbeiten anlegen. Wiederholungen, Urlaubszeiträume und Erledigungen werden lokal gespeichert.
@@ -10,7 +21,7 @@ Lokaler Hausarbeitenkalender für Home Assistant. Eltern planen Aufgaben für Ma
 - **Maximilian/Paul:** eigene Termine der nächsten sieben Tage sehen und abhaken. Selbst angelegte Aufgaben für sich selbst bearbeiten und löschen. Von Eltern zugewiesene Aufgaben dürfen erledigt, aber nicht umgeplant werden.
 - **Kalenderkarte:** heute und die folgenden sechs Tage, gruppiert nach Datum. Es erscheinen nur Tage mit offenen Einträgen; leere Tage werden ausgeblendet. Erledigte Termine verschwinden. Jede Zuordnung an ein Kind hat eine eigene Erledigung: Bei einer Aufgabe für beide muss jedes Kind seinen Termin abhaken.
 - **Wiederholungen:** einmalig; täglich/alle X Tage; wöchentlich/alle X Wochen an gewählten Wochentagen; erster bis fünfter oder letzter Wochentag im Monat, auch alle X Monate.
-- **Urlaub:** Eltern pausieren alle Hausarbeiten beider Kinder für einen Datumsbereich. Termine im Zeitraum entfallen, auch einmalige Aufgaben. Kein Nachholstapel und keine Verschiebung des Wiederholungsrhythmus. Nach dem Ende des Zeitraums laufen die regulären Termine weiter.
+- **Urlaub:** Der zentrale Modus in Family Access pausiert die Hausarbeiten beider Kinder. Termine im Zeitraum entfallen, auch einmalige Aufgaben. Kein Nachholstapel und keine Verschiebung des Wiederholungsrhythmus. Nach dem Ende des Zeitraums laufen die regulären Termine weiter.
 - **Native HA-Kalender:** je ein Kalender für Maximilian und Paul, zusätzlich zur interaktiven Karte.
 - **Gestaltung:** kompakte Karte, Register und Zeilen im Stil von Light Manager und Shutter Manager. HA-Themenfarben, keine externen Frontend-Bibliotheken.
 
@@ -40,7 +51,7 @@ Für die Rollen von Maximilian und Paul (sowie eingeschränkte Elternrollen) unt
 hausarbeiten_manager/*
 ```
 
-Damit werden ausschließlich die Befehle dieser Integration zugelassen. Die Integration prüft bei JEDEM Abruf und Schreibaufruf die tatsächliche angemeldete Benutzer-ID: Kinder bekommen nur ihre eigenen Termine und dürfen weder für das andere Kind schreiben noch Urlaube ändern. Native HA-Administratoren dürfen die Aufgabenverwaltung verwenden; die Einstellungen und der Urlaubsmodus sind ausschließlich den zugeordneten Konten Vera und Manuel vorbehalten. Auch Vera und Manuel erhalten die Elternfunktionen über die explizite Kontozuordnung, ohne HA-Administratoren sein zu müssen.
+Damit werden ausschließlich die Befehle dieser Integration zugelassen. Die Integration prüft bei JEDEM Abruf und Schreibaufruf die tatsächliche angemeldete Benutzer-ID: Kinder bekommen nur ihre eigenen Termine und dürfen weder für das andere Kind schreiben noch Urlaube ändern. Native HA-Administratoren dürfen die Aufgabenverwaltung verwenden; die globalen Urlaubseinstellungen werden ausschließlich in Family Access durch echte HA-Administratoren verwaltet. Auch Vera und Manuel erhalten die Elternfunktionen über die explizite Kontozuordnung, ohne HA-Administratoren sein zu müssen.
 
 Für die zusätzlichen nativen Kalender die tatsächlichen Entitäts-IDs unter Entwicklerwerkzeuge → Zustände prüfen. Erwartet:
 
@@ -70,7 +81,7 @@ Die Standardansicht zeigt heute bis heute + 6 Tage. Frühere unerledigte Termine
 
 ## Urlaubsmodus
 
-Vera und Manuel öffnen das **Zahnrad (Einstellungen)** und wählen dort **Urlaub planen / Verwalten**, Von und Bis einschließlich, danach Speichern. Weitere Zeiträume können ergänzt werden. Mit **Urlaub beenden / Planung aufheben** werden zukünftige Urlaubszeiträume aufgehoben und ein laufender Urlaub mit gestern beendet. Bereits vergangene Urlaubstage bleiben gespeichert, damit ausgelassene Termine nicht nachträglich wieder erscheinen. Das Setzen eines Urlaubs kann keine vergangenen Tage nachträglich überspringen.
+Echte HA-Administratoren öffnen **Family Access → Einstellungen → Urlaubsmodus** und schalten den zentralen Modus ein oder aus. Das Ausschalten beendet einen laufenden Urlaub mit gestern. Die Hausarbeiten-App enthält keinen eigenen Urlaubsschalter. Bereits vergangene Urlaubstage bleiben gespeichert, damit ausgelassene Termine nicht nachträglich wieder erscheinen. Das Setzen eines Urlaubs kann keine vergangenen Tage nachträglich überspringen.
 
 ## Speicherung und Grenzen
 

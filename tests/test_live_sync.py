@@ -38,7 +38,9 @@ class LiveSyncTests(unittest.IsolatedAsyncioTestCase):
                    'timedelta':timedelta,'deepcopy':deepcopy,**vars(e)}
         spec=importlib.util.spec_from_file_location('permission_client',SOURCE.parent/'family_access.py')
         client=importlib.util.module_from_spec(spec);spec.loader.exec_module(client)
-        namespace.update(allows=client.allows,require=client.require)
+        spec2=importlib.util.spec_from_file_location('vacation_client',SOURCE.parent/'vacation_client.py')
+        vacation=importlib.util.module_from_spec(spec2);spec2.loader.exec_module(vacation)
+        namespace.update(allows=client.allows,require=client.require,vacation_client=vacation)
         tree=ast.parse(SOURCE.read_text())
         selected=[node for node in tree.body if isinstance(node,ast.ClassDef) and node.name=='Manager' or isinstance(node,ast.AsyncFunctionDef) and node.name=='ws_subscribe']
         for node in selected:node.decorator_list=[]

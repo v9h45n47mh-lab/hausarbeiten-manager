@@ -17,11 +17,12 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 from .family_access import allows, require, register
+from . import vacation_client
 from .engine import (CHILDREN, actor_for, can_edit, can_manage_settings, complete, delete_task, empty_data,
                      migrate_vacation, occurrences, reopen, save_task, save_vacation, visible_people, vacation_on)
 
 DOMAIN = 'hausarbeiten_manager'
-VERSION = '0.4.0'
+VERSION = '0.5.0'
 SIGNAL = DOMAIN + '_updated'
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,6 +45,8 @@ async def async_setup_entry(hass, entry):
     manager = Manager(hass, entry)
     await manager.load()
     hass.data[DOMAIN] = manager
+    await vacation_client.register(hass, DOMAIN, manager.legacy_vacation, lambda:hass.async_create_task(manager.sync_vacation()), entry=entry)
+    await manager.sync_vacation()
     await hass.config_entries.async_forward_entry_setups(entry, [Platform.CALENDAR])
     entry.async_on_unload(async_track_time_interval(hass, manager.tick, timedelta(minutes=1)))
     entry.async_on_unload(entry.add_update_listener(reload_entry))
@@ -76,6 +79,36 @@ class Manager:
             await self.store.async_save(self.data)
         self.last_day = self.today()
 
+    def legacy_vacation(self):
+        return {'enabled':self.data.get('vacation_enabled',False),
+                'started':self.data.get('vacation_started'),
+                'periods':[{'start':p['start'],'end':p['end']} for p in self.data.get('vacations',[])]}
+
+    def vacation_snapshot(self):
+        return vacation_client.snapshot(self.hass,self.legacy_vacation(),DOMAIN)
+
+    def effective_data(self):
+        state=self.vacation_snapshot()
+        if not state['central']:return deepcopy(self.data)
+        data=deepcopy(self.data)
+        data['vacation_enabled']=state['enabled']
+        data['vacation_started']=state['started']
+        data['vacations']=[{'id':'central_'+p['start']+'_'+p['end'],**p} for p in state['periods']]
+        return data
+
+    async def sync_vacation_locked(self):
+        result=self.effective_data()
+        if result==self.data:return False
+        result['revision']=self.data['revision']+1
+        await self.store.async_save(result)
+        self.data=result
+        async_dispatcher_send(self.hass,SIGNAL)
+        return True
+
+    async def sync_vacation(self):
+        async with self.lock:
+            await self.sync_vacation_locked()
+
     def today(self):
         return dt_util.as_local(dt_util.utcnow()).date()
 
@@ -107,15 +140,18 @@ class Manager:
             row['editable'] = can_edit(actor, task)
             tasks.append(row)
         today = self.today()
+        effective=self.effective_data()
         return {'revision': self.data['revision'], 'today': today.isoformat(),
                 'person': actor['person'], 'parent': actor['parent'],
                 'settings_allowed': can_manage_settings(actor), 'people': people,
-                'tasks': tasks, 'occurrences': occurrences(self.data, people, today, today+timedelta(days=6), include_done=True),
-                'vacation_active': self.data.get('vacation_enabled', False),
-                'vacations': deepcopy(self.data['vacations']) if can_manage_settings(actor) else [], 'version': VERSION}
+                'tasks': tasks, 'occurrences': occurrences(effective, people, today, today+timedelta(days=6), include_done=True),
+                'vacation':vacation_client.status(self.hass,self.legacy_vacation(),DOMAIN),'vacation_active': effective.get('vacation_enabled', False),
+                'vacations': deepcopy(effective['vacations']) if can_manage_settings(actor) else [], 'version': VERSION}
 
     async def mutate(self, actor, revision, operation, payload):
+        if operation=='vacation':raise PermissionError('Urlaubsmodus bitte zentral in Family Access ändern.')
         async with self.lock:
+            await self.sync_vacation_locked()
             if revision != self.data['revision']:
                 raise ValueError('Die Daten wurden geändert. Bitte neu laden und erneut versuchen.')
             if operation == 'save':
@@ -127,7 +163,7 @@ class Manager:
             elif operation == 'delete':
                 result = delete_task(self.data, payload['task_id'], actor)
             else:
-                result = save_vacation(self.data, payload['enabled'], actor, self.today())
+                raise ValueError('Unbekannte Aktion.')
             result['revision'] = self.data['revision']+1
             # Publish only after durable storage succeeds.
             await self.store.async_save(result)
@@ -136,6 +172,7 @@ class Manager:
             return self.snapshot(actor)
 
     async def tick(self, now):
+        await self.sync_vacation()
         if self.last_day != self.today():
             self.last_day = self.today()
             async_dispatcher_send(self.hass, SIGNAL)

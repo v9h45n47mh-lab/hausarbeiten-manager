@@ -1,6 +1,6 @@
 import {UI_CSS, UI_VERSION, navigation, section, row as uiRow, button, iconButton, toggle, field, selectField, dialog as uiDialog, notice, versionInfo, icon, escapeHtml, bindUI, completionRow, dayAgenda, checkboxGroup, weekdayPicker, textareaField, counter, recurrenceEditor, formError, confirmDialog} from './family-ui/1.2.1/family-ui.js';
-/* Hausarbeiten Manager 0.4.0 — no external frontend dependencies. */
-const HM_VERSION='0.4.0';
+/* Hausarbeiten Manager 0.5.0 — no external frontend dependencies. */
+const HM_VERSION='0.5.0';
 const hmEsc=escapeHtml;
 const hmDays=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const hmLabel=t=>{
@@ -16,7 +16,7 @@ const hmSelect=({name,...options})=>selectField({id:'hm-'+name,name,...options})
 const hmRow=(options,classes='')=>uiRow(options).replace('class="setting-row"',`class="setting-row row ${classes}"`);
 class HausarbeitenManagerCard extends HTMLElement{
  constructor(){super();this.attachShadow({mode:'open'});this._tab='calendar';this._busy=false;this._timer=null;this._error='';this._user=null;this._seq=0;this._closedDays=new Set();this._groups=[];this._active=false;this._dirty=false;this._unsub=null;this._subConn=null;this._subToken=0;this._bindUI();}
- _bindUI(){this._unbindUI ||= bindUI(this.shadowRoot,({action,data,checked,value,element})=>{if(action==='navigate'){if(data.page==='settings'&&!this._data?.settings_allowed)return;this._tab=data.page;this.render();}else if(action==='add')this.edit();else if(action==='edit')this.edit(this._data.tasks.find(t=>t.id===data.id));else if(action==='delete')this.confirmDelete(this._data.tasks.find(t=>t.id===data.id));else if(action==='completion-change')this._completeGroup(data.id,data.person);else if(action==='recurrence-change')this._syncAssignees(element,value);else if(action==='delete-confirm'){if(this._pendingDelete)this.mutate('delete_task',{task_id:this._pendingDelete});}else if(action==='vacation'&&this._data.settings_allowed)this.mutate('vacation',{enabled:checked});});}
+ _bindUI(){this._unbindUI ||= bindUI(this.shadowRoot,({action,data,checked,value,element})=>{if(action==='navigate'){if(data.page==='settings'&&!this._data?.settings_allowed)return;this._tab=data.page;this.render();}else if(action==='add')this.edit();else if(action==='edit')this.edit(this._data.tasks.find(t=>t.id===data.id));else if(action==='delete')this.confirmDelete(this._data.tasks.find(t=>t.id===data.id));else if(action==='completion-change')this._completeGroup(data.id,data.person);else if(action==='recurrence-change')this._syncAssignees(element,value);else if(action==='delete-confirm'){if(this._pendingDelete)this.mutate('delete_task',{task_id:this._pendingDelete});}});}
  setConfig(config){this._config={title:'Hausarbeiten',...config};this.render();}
  set hass(hass){this._hass=hass;const user=hass.user?.id;if(user!==this._user){this._stopSubscription();this._seq++;this._user=user;this._data=null;this._loading=false;this.render();this.load();}else if(!this._data&&!this._loading)this.load();this._subscribe();}
  connectedCallback(){this._bindUI();this._active=true;if(!this._timer)this._timer=setInterval(()=>{this._subscribe();this.load();},15000);this._subscribe();if(this._hass)this.load();}
@@ -54,7 +54,7 @@ class HausarbeitenManagerCard extends HTMLElement{
  }return out||notice('Keine offenen Hausarbeiten in den nächsten 7 Tagen.');
  }
  tasks(){return this._data.tasks.length?this._data.tasks.map(task=>hmRow({title:task.title,description:task.assignees.join(' · ')+(task.alternating?' · Abwechselnd (Start: '+task.first_person+')':'')+' · '+hmLabel(task)+' · Ab '+this.dayTitle(task.start)+(task.end?' · bis '+this.dayTitle(task.end):''),trailing:task.editable?iconButton({icon:'edit',label:task.title+' bearbeiten',action:'edit',data:{id:task.id}})+iconButton({icon:'trash',label:task.title+' löschen',action:'delete',danger:true,data:{id:task.id}}):''})).join(''):notice('Noch keine Hausarbeiten angelegt.');}
- settings(){if(!this._data.settings_allowed)return '';return uiRow({title:'Urlaubsmodus',trailing:toggle({label:'Urlaubsmodus',action:'vacation',checked:this._data.vacation_active})})+section({id:'tasks',title:'Hausarbeiten',trailing:button({label:'Hausarbeit',icon:'add',action:'add',variant:'primary'}),content:this.tasks()});}
+ settings(){if(!this._data.settings_allowed)return '';return section({id:'tasks',title:'Hausarbeiten',trailing:button({label:'Hausarbeit',icon:'add',action:'add',variant:'primary'}),content:this.tasks()});}
  render(){
   if(!this._config)return;
   const d=this._data;this._rememberDays();

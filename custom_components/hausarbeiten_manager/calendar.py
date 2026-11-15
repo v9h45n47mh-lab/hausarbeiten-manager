@@ -24,7 +24,7 @@ class ChoreCalendar(CalendarEntity):
     @property
     def event(self):
         today = self.manager.today()
-        rows = occurrences(self.manager.data, [self.child], today, today+timedelta(days=60))
+        rows = occurrences(self.manager.effective_data(), [self.child], today, today+timedelta(days=60))
         return self.make_event(rows[0]) if rows else None
 
     def make_event(self, row):
@@ -37,7 +37,7 @@ class ChoreCalendar(CalendarEntity):
         first = dt_util.as_local(start_date).date()
         local_end = dt_util.as_local(end_date)
         last = (local_end-timedelta(microseconds=1)).date()
-        rows = occurrences(self.manager.data,[self.child],first,last)
+        rows = occurrences(self.manager.effective_data(),[self.child],first,last)
         return [self.make_event(row) for row in rows]
 
     async def async_added_to_hass(self):
