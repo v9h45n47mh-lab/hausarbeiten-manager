@@ -193,6 +193,17 @@ Die aktive Karte verwendet nun HA UI Kit **1.1.0** aus dem lokalen Ordner `front
 
 Aktive UI-Version: **1.2.1**, lokal unter `frontend/family-ui/1.2.1/`. Gemeinsame Bausteine für Aufgaben/Auswahlfelder beziehungsweise Statistik werden direkt genutzt. Daten, Funktionen, Karten-YAML und Berechtigungen bleiben gültig. Nach dem Update HA neu starten und Dashboard/App neu laden.
 
-## Strikte UI-Kit-Übereinstimmung ab 0.3.4
+## Strikte UI-Kit-Übereinstimmung ab 0.4.0
 
 Die Karten injizieren ausschließlich `UI_CSS` aus HA UI Kit 1.2.1. Es gibt keine lokalen visuellen CSS-Regeln. Aufgaben, Erledigungsereignisse, Wiederholungseditor und Dialoge beziehungsweise Verlaufsgruppen/Zähler und Statistiken verwenden die gemeinsamen Komponenten. Browserprüfungen liegen unter `tests/ui-browser.cjs` und laufen im Workflow „UI Kit browser verification“. Sie vergleichen die Gestaltung mit einer Kit-Referenzkarte bei 320/375/390/430/1100 px, hell/dunkel, einschließlich Dialogen, Rollenansichten und Live-Sync.
+
+
+## Zentrale Rollenrechte
+
+Rollenrechte: eigene Aufgaben, Verwaltung aller Aufgaben sowie Urlaub/Einstellungen. Die bestehende Zuordnung zwischen HA-Konto und Familienmitglied bleibt als Identitätszuordnung erhalten. Elternnamen vergeben bei aktiver zentraler Verwaltung keine zusätzlichen Rechte.
+
+Berechtigungen werden jetzt in **Family Access → Anwendung → Rolle** verwaltet. Benutzer können mehrere Rollen erhalten; ihre Freigaben ergänzen sich. Vorhandene Anwendungsrechte werden einmalig in Rollen mit dem Zusatz „übernommen“ importiert und den bisherigen Benutzern zugeordnet. Dashboardfreigaben und die Aktivierung der Dashboardnavigation werden dadurch nicht verändert.
+
+Zum Entziehen eines Rechts alle zugewiesenen Rollen einschließlich übernommener Rollen prüfen. Neue Benutzer erhalten nach der Übernahme keine automatischen Anwendungsrechte. Echte HA-Administratoren behalten Vollzugriff zur Wiederherstellung. Geräte-, Eigentümer- und externe Kontoberechtigungen gelten zusätzlich; eine Rolle erzeugt keine HA-Administratorrechte.
+
+**Aktualisierung:** zuerst Family Access Manager 1.1.0 oder neuer, danach die beteiligten Anwendungen aktualisieren und Home Assistant neu starten. Solange Family Access nicht eingerichtet ist, bleibt die bisherige Rechtevergabe erhalten. Ist Family Access eingerichtet, aber nicht verfügbar oder zu alt, werden Anwendungsaktionen für normale Benutzer abgelehnt. Lokale Benutzer-/Personen-, Geräte- und Musikkontozuordnungen bleiben für Identität und Eigentum erhalten; Rechte werden zentral vergeben.

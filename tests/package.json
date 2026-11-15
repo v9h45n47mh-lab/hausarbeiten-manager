@@ -5,6 +5,7 @@
     "test:browser": "node ui-browser.cjs"
   },
   "devDependencies": {
-    "playwright": "1.62.1"
+    "playwright": "1.62.1",
+    "linkedom": "0.18.15"
   }
 }

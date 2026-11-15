@@ -2,3 +2,8 @@ __pycache__/
 *.py[cod]
 node_modules/
 .pytest_cache/
+
+dist/
+node_modules/
+test-results/
+__pycache__/

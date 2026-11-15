@@ -1,6 +1,6 @@
 import {UI_CSS, UI_VERSION, navigation, section, row as uiRow, button, iconButton, toggle, field, selectField, dialog as uiDialog, notice, versionInfo, icon, escapeHtml, bindUI, completionRow, dayAgenda, checkboxGroup, weekdayPicker, textareaField, counter, recurrenceEditor, formError, confirmDialog} from './family-ui/1.2.1/family-ui.js';
-/* Hausarbeiten Manager 0.3.4 — no external frontend dependencies. */
-const HM_VERSION='0.3.4';
+/* Hausarbeiten Manager 0.4.0 — no external frontend dependencies. */
+const HM_VERSION='0.4.0';
 const hmEsc=escapeHtml;
 const hmDays=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const hmLabel=t=>{
@@ -62,7 +62,7 @@ class HausarbeitenManagerCard extends HTMLElement{
   this.shadowRoot.innerHTML=`<style>${UI_CSS}</style><ha-card>
   ${navigation({label:this._config.title,items:[{id:'calendar',label:this._config.title}],active:this._tab,settings:Boolean(d?.settings_allowed),help:false})}
   <main>${this._error?notice(this._error,{error:true}):''}
-  ${d?(this._tab==='settings'?this.settings()+versionInfo({frontend:HM_VERSION,backend:d.version,ui:UI_VERSION}):`<div class="page-actions">${counter(d.occurrences.filter(r=>!r.completed).length+' offen').replace('class="fui-counter"','class="fui-counter pill"')}${!d.parent?button({label:'Einmalige Arbeit',icon:'add',action:'add'}):''}</div>${this.calendar()}`):notice(this._error?'Bitte Benutzerzuordnung und Access-Control-Freigabe prüfen.':'Hausarbeiten werden geladen …')}
+  ${d?(this._tab==='settings'?this.settings()+versionInfo({frontend:HM_VERSION,backend:d.version,ui:UI_VERSION}):`<div class="page-actions">${counter(d.occurrences.filter(r=>!r.completed).length+' offen').replace('class="fui-counter"','class="fui-counter pill"')}${!d.parent?button({label:'Einmalige Arbeit',icon:'add',action:'add'}):''}</div>${this.calendar()}`):notice(this._error?'Bitte Personenzuordnung und Access-Control-Freigabe prüfen.':'Hausarbeiten werden geladen …')}
   </main></ha-card><div class="dialog-host"></div>`;
  }
  async _completeGroup(index,person){if(this._data.parent||this._busy)return;const group=this._groups[Number(index)];if(!group)return;const entries=group.rows.filter(r=>r.person===person);const operation=entries.every(r=>r.completed)?'reopen':'complete';for(const entry of entries.filter(r=>operation==='reopen'||!r.completed)){await this.mutate(operation,{task_id:entry.task_id,person:entry.person,date:entry.date});if(this._error)break;}}

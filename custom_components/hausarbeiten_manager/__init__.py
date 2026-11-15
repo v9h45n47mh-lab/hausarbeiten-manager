@@ -16,11 +16,12 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dis
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
+from .family_access import allows, require, register
 from .engine import (CHILDREN, actor_for, can_edit, can_manage_settings, complete, delete_task, empty_data,
                      migrate_vacation, occurrences, reopen, save_task, save_vacation, visible_people, vacation_on)
 
 DOMAIN = 'hausarbeiten_manager'
-VERSION = '0.3.4'
+VERSION = '0.4.0'
 SIGNAL = DOMAIN + '_updated'
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,6 +36,11 @@ async def async_setup(hass, config):
 
 
 async def async_setup_entry(hass, entry):
+    mapping = entry.options.get('users',entry.data.get('users',{}))
+    def legacy(user):
+        person=next((person for person,uid in mapping.items() if uid==user.id),None)
+        return {'view':bool(person) or user.is_admin,'manage':user.is_admin or person in ('Vera','Manuel'),'settings':user.is_admin or person in ('Vera','Manuel')}
+    await register(hass, DOMAIN, ('view','manage','settings'), legacy, entry=entry, notify=lambda:async_dispatcher_send(hass,SIGNAL))
     manager = Manager(hass, entry)
     await manager.load()
     hass.data[DOMAIN] = manager
@@ -77,7 +83,16 @@ class Manager:
         if not user or not user.is_active:
             raise PermissionError('Keine gültige Anmeldung.')
         mapping = self.entry.options.get('users', self.entry.data['users'])
-        return actor_for(user.id, mapping, user.is_admin)
+        require(self.hass,user,DOMAIN,'view',user.is_admin or user.id in mapping.values())
+        try:
+            actor = actor_for(user.id, mapping, user.is_admin)
+        except PermissionError:
+            if not allows(self.hass,user,DOMAIN,'manage',False):
+                raise
+            actor={'user_id':user.id,'id':user.id,'person':user.name or user.id,'parent':False}
+        actor['parent']=allows(self.hass,user,DOMAIN,'manage',actor['parent'])
+        actor['settings_allowed']=allows(self.hass,user,DOMAIN,'settings',actor.get('settings_allowed',actor['parent']))
+        return actor
 
     def snapshot(self, actor):
         people = visible_people(actor)
